@@ -47,7 +47,24 @@ export const getDesignationAction = async (req, res) => {
         let designation
         if(branch_id == '0')
         {
-            designation = await designationModel.find().skip(skip).limit(limit)
+            designation = await designationModel.aggregate([
+                {
+                    $lookup: {
+                      from: "departments",
+                      localField: "department_name",
+                      foreignField: "_id",
+                      as: "department",
+                    },
+                },
+                {
+                    $project:{
+                        _id:1,
+                        designation_name:1,
+                        department_name: { $arrayElemAt: ["$department.department_name", 0] } ,
+                        designation_status:1
+                    }
+                }
+            ]).skip(skip).limit(limit)
         }
         else
         {
@@ -112,8 +129,16 @@ export const updateDesignationAction = async (req, res) => {
 
 export const getAllDesignationAction = async (req, res) => {
     try {
+        let designation
+        if(req.params.branch_id == '0')
+        {
+            designation = await designationModel.find();
+        }
+        else
+        {
+            designation = await designationModel.find({branch_name:new ObjectId(req.params.branch_id)});
+        }
 
-        var designation = await designationModel.find({department_name:new ObjectId(req.params.department_id)});
         if (!designation) {
             return res.status(404).json({ message: 'Designation not found',status:false });
         }

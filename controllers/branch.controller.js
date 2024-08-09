@@ -32,6 +32,8 @@ export const createBranchAction = async (req, res) => {
 
 export const getBranchByIdAction = async (req, res) => {
     try {
+        // console.log('All123');
+        
         // const staff = await staffModel.find(req.params.staff_id);
         var branch = await branchModel.aggregate([
             {$match:{_id:new ObjectId(req.params.branch_id)}},
@@ -49,6 +51,8 @@ export const getBranchAction = async (req, res) => {
     try {
         // const staff = await staffModel.find();
         // const staff1 = await Shift.find();
+        // console.log('All');
+        
         const pageNumber = req.query.page || 1;
         const limit = 10;
         const skip = (pageNumber - 1) * limit;
@@ -123,9 +127,11 @@ export const getAllBranchAction = async (req, res) => {
     try {
         // const staff = await staffModel.find();
         // const staff1 = await Shift.find();
-        const pageNumber = req.query.page || 1;
-        const limit = 10;
-        const skip = (pageNumber - 1) * limit;
+        // console.log('All');
+        
+        // const pageNumber = req.query.page || 1;
+        // const limit = 10;
+        // const skip = (pageNumber - 1) * limit;
         var branch = await branchModel.find()
         if (!branch) {
             return res.status(404).json({ message: 'Branch not found',status:false });

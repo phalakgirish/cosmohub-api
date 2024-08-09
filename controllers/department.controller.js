@@ -47,11 +47,48 @@ export const getDepartmentAction = async (req, res) => {
         let department 
         if(branch_id == '0')
         {
-            department = await departmentModel.find().skip(skip).limit(limit);
+            department = await departmentModel.aggregate([
+                    {
+                        $lookup: {
+                          from: "branches",
+                          localField: "branch_name",
+                          foreignField: "_id",
+                          as: "branch",
+                        },
+                    },
+                    {
+                        $project:{
+                            _id:1,
+                            department_name:1,
+                            branch_name: { $arrayElemAt: ["$branch.branch_name", 0] } ,
+                            department_status:1
+                        }
+                    }
+            ]).skip(skip).limit(limit);
         }
         else
         {
-            department = await departmentModel.find({branch_id:new ObjectId(branch_id)}).skip(skip).limit(limit);
+            department = await departmentModel.aggregate([
+                {$match:{branch_id:new ObjectId(branch_id)}},
+                {
+                    $lookup: {
+                      from: "branches",
+                      localField: "branch_id",
+                      foreignField: "_id",
+                      as: "branch",
+                    },
+                },
+                {
+                    $project:{
+                        _id:1,
+                        department_name:1,
+                        branch:{branch_name:1},
+                        department_status:1
+                    }
+                }
+
+                
+            ]).skip(skip).limit(limit);
         }
         if (!department) {
             return res.status(404).json({ message: 'Department not found',status:false });
@@ -112,9 +149,31 @@ export const updateDepartmentAction = async (req, res) => {
 
 export const getAllDepartmentAction = async (req, res) => {
     try {
+        let department
+        if(req.params.branch_id == '0')
+        {
+            department = await departmentModel.aggregate([
+                {
+                    $project:{
+                        _id:1,
+                        department_name:1
+                    }
+                }
+            ]);
+        }
+        else
+        {
+            department = await departmentModel.aggregate([
+                {$match:{branch_name:new ObjectId(req.params.branch_id)}},
+                {
+                    $project:{
+                        _id:1,
+                        department_name:1
+                    }
+                }
+                ]);
+        }
 
-
-        var department = await departmentModel.find({branch_name:new ObjectId(req.params.branch_id)});
         if (!department) {
             return res.status(404).json({ message: 'Department not found',status:false });
         }

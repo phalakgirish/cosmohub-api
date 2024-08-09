@@ -8,7 +8,7 @@ branchRouter.get('/:branch_id',Auth,getBranchByIdAction);
 branchRouter.get('/',Auth,getBranchAction);
 branchRouter.put('/:branch_id',Auth,updateBranchAction);
 branchRouter.delete('/:branch_id',Auth,deleteBranchAction);
-branchRouter.get('/all',Auth,getAllBranchAction);
+branchRouter.get('/all/:all',Auth,getAllBranchAction);
 
 // branchRouter.get('/:branch_id',Auth,deleteBranchAction); //search
 

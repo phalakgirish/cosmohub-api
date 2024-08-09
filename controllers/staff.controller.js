@@ -184,9 +184,9 @@ export const getStaffsAction = async (req, res) => {
                   staff_mobile_number: 1,
                   staff_emailId: 1,
                   staff_gender:1,
-                  staff_department:{department_name:1},
-                  staff_designations:{designation_name:1},
-                  staff_branch:{branch_name:1},
+                  staff_department:{ $arrayElemAt: ["$staff_department.department_name", 0] },
+                  staff_designations:{ $arrayElemAt: ["$staff_designations.designation_name", 0] },
+                  staff_branch:{ $arrayElemAt: ["$staff_branch.branch_name", 0] },
                   staff_doj:1
                 //   AppointmentHistory:{
                 //   _id:1,

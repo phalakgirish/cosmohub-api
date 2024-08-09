@@ -47,7 +47,7 @@ export const loginActionFunction = async function(req,res){
 
                 var tokenvalue = jwt.sign({
                     data: payload,
-                },SECRET,{expiresIn:60*60});
+                },SECRET,{expiresIn:60*60*24});
 
                 // console.log(tokenvalue);
                 res.send({msg:"Proceed To Dashboard",status:true,token:tokenvalue});
