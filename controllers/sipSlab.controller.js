@@ -5,16 +5,22 @@ import sipSlabModel from "../models/sipSlab.model.js";
 const ObjectId = mongoose.Types.ObjectId;
 
 export const createSipSlabAction = async (req, res) => {
-    const{sip_slab_from,sip_slab_to,sip_slab_status,sip_slab_details,branch_id} = req.body;   
+    const{sip_slab_from,sip_slab_to,sip_rank,sip_amount,sip_type,sip_status,branch_id} = req.body;   
+
+    
     try {
 
         var DataToSave = {
             sip_slab_from: sip_slab_from,
             sip_slab_to: sip_slab_to,
-            sip_slab_status: sip_slab_status,
-            sip_slab_details: sip_slab_details,
+            sip_rank: sip_rank,
+            sip_amount: sip_amount,
+            sip_type: sip_type,
+            sip_status: sip_status,
             branch_id:branch_id
         }
+
+        
         const sip_slab = new sipSlabModel(DataToSave);
         await sip_slab.save();
 
@@ -34,7 +40,21 @@ export const getSipSlabByIdAction = async (req, res) => {
         if (sip_slab.length == 0) {
             return res.status(404).json({ message: 'SIP Slab not found',status:false });
         }
-        res.status(200).json({ sip_slab });
+
+        let sips = [
+            {
+                _id:sip_slab[0]._id,
+                duration:[sip_slab[0].sip_slab_from,sip_slab[0].sip_slab_to],
+                rank:sip_slab[0].sip_rank,
+                amount:sip_slab[0].sip_amount,
+                type:sip_slab[0].sip_type,
+                sip_status:sip_slab[0].sip_status,
+                branch_id:sip_slab[0].branch_id
+            }
+        ]
+
+        
+        res.status(200).json({ sips });
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
@@ -50,8 +70,23 @@ export const getSipSlabAction = async (req, res) => {
         if (!sip_slab) {
             return res.status(404).json({ message: 'SIP Slab not found',status:false });
         }
+
+        let sips = []
+        for(let val of sip_slab)
+        {
+            let slab_rec = {
+                _id:val._id,
+                duration:`${val.sip_slab_from}-${val.sip_slab_to}`,
+                rank:val.sip_rank,
+                amount:val.sip_amount,
+                type:val.sip_type,
+                sip_status:val.sip_status
+            }
+
+            sips.push(slab_rec)
+        }
         // console.log(staff1);
-        res.status(200).json({ sip_slab });
+        res.status(200).json({ sips });
         
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -70,16 +105,20 @@ export const deleteSipSlabAction = async (req, res) => {
 };
 
 export const updateSipSlabAction = async (req, res) => {
-    const{sip_slab_from,sip_slab_to,sip_slab_status,sip_slab_details,branch_id} = req.body;     
+    const{sip_slab_from,sip_slab_to,sip_rank,sip_amount,sip_type,sip_status,branch_id} = req.body;     
     try {
 
         var DataToSave = {
             sip_slab_from: sip_slab_from,
             sip_slab_to: sip_slab_to,
-            sip_slab_status: sip_slab_status,
-            sip_slab_details: sip_slab_details,
+            sip_rank: sip_rank,
+            sip_amount: sip_amount,
+            sip_type: sip_type,
+            sip_status: sip_status,
             branch_id:branch_id
         }
+        console.log(DataToSave);
+        
         
         const sip_slab = await sipSlabModel.findByIdAndUpdate({_id:new ObjectId(req.params.slab_id)},DataToSave);
 

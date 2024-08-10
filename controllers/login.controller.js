@@ -41,6 +41,7 @@ export const loginActionFunction = async function(req,res){
                     user_role_type:ans_username['user_role_type'],
                     staff_id:(branch_id == null)?"0":branch_id['_id'],
                     staff_branch:(branch_id == null)?"0":branch_id['staff_branch'],
+                    staff_name:(branch_id == null)?"Admin":branch_id['staff_name'],
                     user_status:ans_username['user_status'],
                 };
                 // console.log(payload);

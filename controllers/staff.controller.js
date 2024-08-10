@@ -38,7 +38,9 @@ const storage = multer.diskStorage({
 
 //   const upload = multer({ storage: storage }).single('staff_pancard');
 
-export const createStaffAction = async (req, res) => {   
+export const createStaffAction = async (req, res) => {
+    console.log(req.body);
+       
     try
     {
         upload(req, res, async function (err) {
@@ -51,7 +53,8 @@ export const createStaffAction = async (req, res) => {
               } 
               else{
                 const{staff_name,staff_dob,staff_mobile_number,staff_emailId,staff_gender,staff_pancard,staff_addharcard,staff_role_type,staff_department,staff_designation,staff_branch,staff_doj} = req.body;
-
+                console.log(req.body);
+                
                 var staffDetails = await staffModel.find();
 
                 let ActualId = 0
@@ -83,7 +86,7 @@ export const createStaffAction = async (req, res) => {
                 var staff_DataToSave = {
                     staff_id: NewStaff_Id,
                     staff_name: staff_name,
-                    staff_dob: staff_dob,
+                    staff_dob: new Date(staff_dob),
                     staff_mobile_number: staff_mobile_number,
                     staff_emailId: staff_emailId,
                     staff_gender: staff_gender,
@@ -92,9 +95,10 @@ export const createStaffAction = async (req, res) => {
                     staff_department: staff_department,
                     staff_designation: staff_designation,
                     staff_branch: staff_branch,
-                    staff_doj: staff_doj,
+                    staff_doj: new Date(staff_doj),
                     staff_role_type: staff_role_type
                 }
+                // console.log(staff_DataToSave);
                 
 
                 const staff = new staffModel(staff_DataToSave);
@@ -164,7 +168,7 @@ export const getStaffsAction = async (req, res) => {
                   from: "designations",
                   localField: "staff_designation",
                   foreignField: "_id",
-                  as: "staff_designations",
+                  as: "staff_designation",
                 },
             },
             {
@@ -185,7 +189,7 @@ export const getStaffsAction = async (req, res) => {
                   staff_emailId: 1,
                   staff_gender:1,
                   staff_department:{ $arrayElemAt: ["$staff_department.department_name", 0] },
-                  staff_designations:{ $arrayElemAt: ["$staff_designations.designation_name", 0] },
+                  staff_designation:{ $arrayElemAt: ["$staff_designation.designation_name", 0] },
                   staff_branch:{ $arrayElemAt: ["$staff_branch.branch_name", 0] },
                   staff_doj:1
                 //   AppointmentHistory:{
@@ -265,7 +269,7 @@ export const UpdateStaffAction = async (req, res) => {
                 var staff_DataToSave = {
                     staff_id: staff_id,
                     staff_name: staff_name,
-                    staff_dob: staff_dob,
+                    staff_dob: new Date(staff_dob),
                     staff_mobile_number: staff_mobile_number,
                     staff_emailId: staff_emailId,
                     staff_gender: staff_gender,
@@ -274,7 +278,7 @@ export const UpdateStaffAction = async (req, res) => {
                     staff_department: staff_department,
                     staff_designation: staff_designation,
                     staff_branch: staff_branch,
-                    staff_doj: staff_doj,
+                    staff_doj: new Date(staff_doj),
                     staff_role_type: staff_role_type
                 }
                 

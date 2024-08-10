@@ -14,6 +14,7 @@ import sipMaturityRouter from "./routes/sipMaturity.route.js";
 import sipPaymentRouter from "./routes/sipPayment.route.js";
 import luckyDrawRouter from "./routes/luckyDraw.route.js";
 import sipManagementRouter from "./routes/sipManagement.route.js";
+import allRouter from "./routes/all.route.js";
 
 
 
@@ -39,6 +40,8 @@ app.use('/sipmaturity',sipMaturityRouter)
 app.use('/sippayment',sipPaymentRouter)
 app.use('/luckydraw',luckyDrawRouter)
 app.use('/sipmanagement',sipManagementRouter)
+app.use('/all',allRouter)
+
 
 
 // app.use('/dashboard',dashboardRouter)

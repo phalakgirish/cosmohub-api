@@ -11,6 +11,8 @@ const clientSchema = new Schema({
   client_gender: { type: String, required:true },
   client_pancard: { type: String, required:true },
   client_addharcard: { type: String, required:true },
+  client_postaladdress: { type: String, required:true },
+  client_landmark: { type: String, required:true },
   branch_id:{ type: mongoose.Schema.ObjectId, required:true }
 });
 

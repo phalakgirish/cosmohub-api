@@ -34,7 +34,7 @@ export const createClientAction = async (req, res) => {
               else{
                 // console.log(req.body);
                 // var personalDetails = req.body.personalDetails
-                const{client_name, client_dob, client_mobile_number, client_emailId, client_gender, client_pancard, client_addharcard,branch_id} = req.body;
+                const{client_name, client_dob, client_mobile_number, client_emailId, client_gender, client_pancard, client_addharcard,client_postaladdress,client_landmark,branch_id} = req.body;
 
                 var clientDetails = await clientModel.find();
 
@@ -64,7 +64,7 @@ export const createClientAction = async (req, res) => {
                     NewClient_Id = 'CL-'+ActualId.toString()
                 }
                 
-                var staff_DataToSave = {
+                var client_DataToSave = {
                     client_id: NewClient_Id,
                     client_name: client_name,
                     client_dob: new Date(client_dob),
@@ -73,10 +73,14 @@ export const createClientAction = async (req, res) => {
                     client_gender: client_gender,
                     client_pancard: req.files.client_pancard[0].filename,
                     client_addharcard: req.files.client_addharcard[0].filename,
+                    client_postaladdress: client_postaladdress,
+                    client_landmark: client_landmark,
                     branch_id:branch_id
                 }
+                console.log(client_DataToSave);
+                
 
-                const client = new clientModel(staff_DataToSave);
+                const client = new clientModel(client_DataToSave);
                 await client.save();
 
                 
@@ -156,7 +160,7 @@ export const UpdateClientAction = async (req, res) => {
               } 
               else{
 
-            const{client_id, client_name, client_dob, client_mobile_number, client_emailId, client_gender, client_pancard, client_addharcard,branch_id} = req.body; 
+            const{client_id, client_name, client_dob, client_mobile_number, client_emailId, client_gender, client_pancard, client_addharcard,client_postaladdress,client_landmark,branch_id} = req.body; 
 
             var client_record = await clientModel.find({_id:new ObjectId(req.params.client_id)});
 
@@ -182,6 +186,8 @@ export const UpdateClientAction = async (req, res) => {
                 client_gender: client_gender,
                 client_pancard: clientPancard,
                 client_addharcard: clientAddharCard,
+                client_postaladdress: client_postaladdress,
+                client_landmark: client_landmark,
                 branch_id:branch_id
             }
 
