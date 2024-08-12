@@ -223,11 +223,11 @@ export const DeleteStaffAction = async (req, res) => {
     try {
         // const staff = await staffModel.find();
         // const staff1 = await Shift.find();
-        var working_schedule_delete = await Shift.deleteMany({staff_id:new ObjectId(req.params.staff_id)})
+        var users = await userModel.deleteOne({staff_id:new ObjectId(req.params.staff_id)})
 
 
         var staff = await staffModel.deleteOne({_id:new ObjectId(req.params.staff_id)})
-        res.status(201).json({ message: 'Staff deleted successfully',status:true, staff,working_schedule_delete });
+        res.status(201).json({ message: 'Staff deleted successfully',status:true, staff,users });
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
