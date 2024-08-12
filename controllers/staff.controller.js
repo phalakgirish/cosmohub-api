@@ -111,6 +111,7 @@ export const createStaffAction = async (req, res) => {
                     user_password: password_encrypt,
                     user_role_type: staff_role_type,
                     staff_id: staff._id,
+                    user_branch: staff_branch,
                     user_status: true
                 }
 

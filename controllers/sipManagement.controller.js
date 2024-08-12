@@ -33,7 +33,8 @@ export const createSipMemberAction = async (req, res) => {
                 console.log(err);
               } 
               else{
-                const{client_id,sipmember_name,sipmember_bank_name,sipmember_account_number,sipmember_ifsc_code,sipmember_upi_id,sipmember_doj,sipmember_maturity_date,sipmember_nominee_name,sipmember_nominee_age,sipmember_nominee_relation,sipmember_nominee_mobile,sipmember_nominee_pancard,sipmember_nominee_addharcard,sipmemberblock_status,branch_id} = req.body;
+                const{client_id,sipmember_name,sipmember_bank_name,sipmember_account_number,sipmember_ifsc_code,sipmember_upi_id,sipmember_doj,sipmember_maturity_date,sipmember_nominee_name,sipmember_nominee_age,sipmember_nominee_relation,sipmember_nominee_mobile,sipmember_nominee_pancard,sipmember_nominee_addharcard,sipmember_status,branch_id} = req.body;
+                // console.log(req.files);
                 
                 var sipDetails = await sipMemberMgmtModel.find();
 
@@ -74,20 +75,21 @@ export const createSipMemberAction = async (req, res) => {
                     sipmember_doj: new Date(sipmember_doj),
                     sipmember_maturity_date: new Date(sipmember_maturity_date),
                     sipmember_nominee_name: sipmember_nominee_name,
-                    sipmember_nominee_age: sipmember_nominee_age,
+                    sipmember_nominee_age: parseInt(sipmember_nominee_age),
                     sipmember_nominee_relation: sipmember_nominee_relation,
                     sipmember_nominee_mobile: sipmember_nominee_mobile,
                     sipmember_nominee_pancard: req.files.sipmember_nominee_pancard[0].filename,
                     sipmember_nominee_addharcard: req.files.sipmember_nominee_addharcard[0].filename,
-                    sipmemberblock_status:sipmemberblock_status,
+                    sipmember_status:sipmember_status,
                     branch_id:branch_id
                 }
+
                 
 
                 const sip_management = new sipMemberMgmtModel(sip_DataToSave);
                 await sip_management.save();
                 
-                res.status(201).json({ message: 'SIP Member added successfully',status:true ,sip_management});
+                res.status(200).json({ message: 'SIP Member added successfully',status:true ,sip_management});
             }
         });
     }
@@ -119,11 +121,20 @@ export const getSipMembersAction = async (req, res) => {
         const branch_id = req.query.branch_id || '0';
         const limit = 10;
         const skip = (pageNumber - 1) * limit;
-        var staff = await sipMemberMgmtModel.aggregate([
+        var sip_member = await sipMemberMgmtModel.aggregate([
+            {
+                $lookup:{
+                        from: "clients",
+                        localField: "client_id",
+                        foreignField: "_id",
+                        as: "clientId",
+                }
+            },
             {
                 $project:{
                   _id:1,
                   sipmember_id:1,
+                  client_id:{ $arrayElemAt: ["$clientId.client_id", 0] },
                   sipmember_name: 1,
                   sipmember_doj: 1,
                   sipmember_maturity_date: 1,
@@ -138,11 +149,11 @@ export const getSipMembersAction = async (req, res) => {
         .skip(skip).limit(limit)
 
 
-        if (!staff) {
+        if (!sip_member) {
             return res.status(404).json({ message: 'SIP Members not found',status:false });
         }
         // console.log(staff1);
-        res.status(200).json({ staff });
+        res.status(200).json({ sip_member });
         
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -170,7 +181,7 @@ export const UpdateSipMemberAction = async (req, res) => {
                 console.log(err);
               } 
               else{
-                const{sipmember_id,client_id,sipmember_name,sipmember_bank_name,sipmember_account_number,sipmember_ifsc_code,sipmember_upi_id,sipmember_doj,sipmember_maturity_date,sipmember_nominee_name,sipmember_nominee_age,sipmember_nominee_relation,sipmember_nominee_mobile,sipmember_nominee_pancard,sipmember_nominee_addharcard,sipmemberblock_status,branch_id} = req.body;
+                const{sipmember_id,client_id,sipmember_name,sipmember_bank_name,sipmember_account_number,sipmember_ifsc_code,sipmember_upi_id,sipmember_doj,sipmember_maturity_date,sipmember_nominee_name,sipmember_nominee_age,sipmember_nominee_relation,sipmember_nominee_mobile,sipmember_nominee_pancard,sipmember_nominee_addharcard,sipmember_status,branch_id} = req.body;
 
                 const sipMember_record = await sipMemberMgmtModel.find({_id:req.params.sip_id});
                 
@@ -203,7 +214,7 @@ export const UpdateSipMemberAction = async (req, res) => {
                     sipmember_nominee_mobile: sipmember_nominee_mobile,
                     sipmember_nominee_pancard: sipPancard,
                     sipmember_nominee_addharcard: sipAddharCard,
-                    sipmemberblock_status:sipmemberblock_status,
+                    sipmember_status:sipmember_status,
                     branch_id:branch_id
                 }
                 

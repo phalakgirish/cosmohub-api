@@ -132,12 +132,24 @@ export const getAllBranchAction = async (req, res) => {
         // const pageNumber = req.query.page || 1;
         // const limit = 10;
         // const skip = (pageNumber - 1) * limit;
-        var branch = await branchModel.find()
+        var branch = await branchModel.aggregate([
+            {
+                $project:{
+                    _id:1,
+                    branch_name:1
+                }
+            }
+        ])
         if (!branch) {
             return res.status(404).json({ message: 'Branch not found',status:false });
         }
         // console.log(staff1);
-        res.status(200).json({ branch });
+
+            res.status(200).json({ branch });
+
+        
+        // console.log(branch);
+        
         
     } catch (error) {
         res.status(400).json({ error: error.message });

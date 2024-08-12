@@ -4,7 +4,7 @@ const {Schema} = mongoose;
 
 const sipMemberMgmtSchema = new Schema({
   sipmember_id: { type: String },
-  client_id: { type: String },
+  client_id: { type: mongoose.Schema.ObjectId, required:true },
   sipmember_name: { type: String },
   sipmember_bank_name: { type: String },
   sipmember_account_number: { type: String },
@@ -18,7 +18,7 @@ const sipMemberMgmtSchema = new Schema({
   sipmember_nominee_mobile: { type: String },
   sipmember_nominee_pancard: { type: String },
   sipmember_nominee_addharcard: { type: String },
-  sipmemberblock_status: {type: Boolean },
+  sipmember_status: {type: String },
   branch_id:{ type: mongoose.Schema.ObjectId, required:true }
 });
 
