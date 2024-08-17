@@ -4,6 +4,8 @@ import departmentModel from "../models/department.model.js";
 import designationModel from "../models/designation.model.js";
 import clientModel from "../models/client.model.js";
 import userModel from "../models/user.model.js";
+import sipMemberMgmtModel from "../models/sipManagerment.model.js";
+import staffModel from "../models/staff.model.js";
 
 const ObjectId = mongoose.Types.ObjectId;
 
@@ -135,6 +137,92 @@ export const getUsersByBranchIdAction = async (req, res) => {
             return res.status(404).json({ message: 'Users not found',status:false });
         }
         res.status(200).json({ users });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+export const getSipMemberByBranchIdAction = async (req, res) => {
+    try {
+
+        
+        // const staff = await staffModel.find(req.params.staff_id);
+        const branch_id = req.params.branch_id;
+        let sipmember
+
+          if(branch_id == '0')
+            {
+                sipmember = await sipMemberMgmtModel.aggregate([
+                    {$match:{sipmember_status:'continued'}},
+                    {$project:{
+                        _id:1,
+                        sipmember_id:1,
+                        sipmember_name:1
+                    }}
+                  ])
+            }
+            else
+            {
+                sipmember = await sipMemberMgmtModel.aggregate([
+                    {$match:{$and:[{branch_id:new ObjectId(req.params.branch_id)},{sipmember_status:'continued'}]}},
+                    {$project:{
+                        _id:1,
+                        sipmember_id:1,
+                        sipmember_name:1
+                    }}
+                  ])
+            }
+            if (!sipmember) {
+                return res.status(404).json({ message: 'SIP Member not found',status:false });
+            }
+            // console.log(client1);
+            res.status(200).json({ sipmember });
+        // if (department.length == 0) {
+        //     return res.status(404).json({ message: 'Department not found',status:false,department });
+        // }
+        // res.status(200).json({ designation });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+export const getStaffByBranchIdAction = async (req, res) => {
+    try {
+
+        
+        // const staff = await staffModel.find(req.params.staff_id);
+        const branch_id = req.params.branch_id;
+        let staff
+
+          if(branch_id == '0')
+            {
+                staff = await staffModel.aggregate([
+                    {$project:{
+                        _id:1,
+                        stastaff_id:1,
+                        staff_name:1
+                    }}
+                  ])
+            }
+            else
+            {
+                staff = await staffModel.aggregate([
+                    {$match:{staff_branch:new ObjectId(req.params.branch_id)}},
+                    {$project:{
+                        _id:1,
+                        staff_id:1,
+                        staff_name:1
+                    }}
+                  ])
+            }
+            if (!staff) {
+                return res.status(404).json({ message: 'staff not found',status:false });
+            }
+            // console.log(client1);
+            res.status(200).json({ staff });
+        // if (department.length == 0) {
+        //     return res.status(404).json({ message: 'Department not found',status:false,department });
+        // }
+        // res.status(200).json({ designation });
     } catch (error) {
         res.status(400).json({ error: error.message });
     }

@@ -5,14 +5,14 @@ import luckyDrawModel from "../models/luckyDraw.model.js";
 const ObjectId = mongoose.Types.ObjectId;
 
 export const createLuckyDrawAction = async (req, res) => {
-    const{luckydraw_month,spimember_id,luckydraw_rank,ispaymentdone,branch_id} = req.body;   
+    const{luckydraw_month,spimember_id,luckydraw_rank,payment_status,branch_id} = req.body;   
     try {
 
         var DataToSave = {
             luckydraw_month: luckydraw_month,
             spimember_id: spimember_id,
             luckydraw_rank: luckydraw_rank,
-            ispaymentdone: ispaymentdone,
+            payment_status: payment_status,
             branch_id:branch_id
         }
         const luckyDraw = new luckyDrawModel(DataToSave);
@@ -45,7 +45,28 @@ export const getLuckyDrawAction = async (req, res) => {
         const pageNumber = req.query.page || 1;
         const limit = 10;
         const skip = (pageNumber - 1) * limit;
-        var luckyDraw = await luckyDrawModel.find().skip(skip).limit(limit)
+        var luckyDraw = await luckyDrawModel.aggregate([
+            {
+                $lookup:{
+                    from: "sip_member_mgmts",
+                    localField: "spimember_id",
+                    foreignField: "_id",
+                    as: "Sip_id",
+                }
+            },
+            {
+                $project:{
+                    _id:1,
+                    luckydraw_month:1,
+                    // Sip_id:1,
+                    sipmemberId:{ $arrayElemAt: ["$Sip_id.sipmember_id", 0] },
+                    sipMemberName:{ $arrayElemAt: ["$Sip_id.sipmember_name", 0] },
+                    luckydraw_rank:1,
+                    payment_status:1
+                }
+            }
+        ]).skip(skip).limit(limit)
+        
         if (!luckyDraw) {
             return res.status(404).json({ message: 'Record not found',status:false });
         }
@@ -69,14 +90,14 @@ export const deleteLuckyDrawAction = async (req, res) => {
 };
 
 export const updateLuckyDrawAction = async (req, res) => {
-    const{luckydraw_month,spimember_id,luckydraw_rank,ispaymentdone,branch_id} = req.body;  
+    const{luckydraw_month,spimember_id,luckydraw_rank,payment_status,branch_id} = req.body;  
     try {
 
         var DataToSave = {
             luckydraw_month: luckydraw_month,
             spimember_id: spimember_id,
             luckydraw_rank: luckydraw_rank,
-            ispaymentdone: ispaymentdone,
+            payment_status: payment_status,
             branch_id:branch_id
         }
         

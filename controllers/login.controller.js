@@ -23,7 +23,7 @@ export const loginActionFunction = async function(req,res){
 
         if(ans_username === null)
         {
-            res.send({msg:"Username Not Found.",status:false});
+            res.send({msg:"User Email Id Not Found.",status:false});
         }
         else
         {
@@ -55,7 +55,7 @@ export const loginActionFunction = async function(req,res){
             }
             else
             {
-                res.send({msg:"Invalid Username and Password",status:false})
+                res.send({msg:"Invalid User Email Id and Password",status:false})
             }
         }
 

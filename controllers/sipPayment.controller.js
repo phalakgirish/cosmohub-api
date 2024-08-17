@@ -80,7 +80,38 @@ export const getSipPaymentAction = async (req, res) => {
         const pageNumber = req.query.page || 1;
         const limit = 10;
         const skip = (pageNumber - 1) * limit;
-        var sipPayment = await sipPaymentModel.find().skip(skip).limit(limit)
+        var sipPayment = await sipPaymentModel.aggregate([
+            {
+                $lookup:{
+                    from: "sip_member_mgmts",
+                    localField: "sipmember_id",
+                    foreignField: "_id",
+                    as: "Sip_id",
+                }
+            },
+            {
+                $lookup:{
+                    from: "staffs",
+                    localField: "sip_payment_receivedBy",
+                    foreignField: "_id",
+                    as: "receivedBy",
+                }
+            },
+            {
+                $project:{
+                    _id:1,
+                    sippayment_receiptno:1,
+                    Sip_id:{ $arrayElemAt: ["$Sip_id.sipmember_id", 0] },
+                    sipmember_name:1,
+                    sip_payment_month: 1,
+                    sip_amount: 1,
+                    sip_payment_receivedBy:{ $arrayElemAt: ["$receivedBy.staff_name", 0] },
+                    sip_payment_receivedDate:1
+                }
+            }
+        ]).skip(skip).limit(limit)
+        // console.log(sipPayment);
+        
         if (!sipPayment) {
             return res.status(404).json({ message: 'Payment not found',status:false });
         }
