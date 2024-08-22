@@ -117,7 +117,6 @@ export const updateSipSlabAction = async (req, res) => {
             sip_status: sip_status,
             branch_id:branch_id
         }
-        console.log(DataToSave);
         
         
         const sip_slab = await sipSlabModel.findByIdAndUpdate({_id:new ObjectId(req.params.slab_id)},DataToSave);

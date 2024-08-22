@@ -4,10 +4,11 @@ import branchModel from "../models/branch.model.js";
 const ObjectId = mongoose.Types.ObjectId;
 
 export const createBranchAction = async (req, res) => {
-    const{branch_name,branch_contact_person,branch_mobile_number,branch_emailId,branch_area,branch_city,branch_district,branch_taluka,branch_pincode,branch_state,branch_status} = req.body;   
+    const{branch_code,branch_name,branch_contact_person,branch_mobile_number,branch_emailId,branch_area,branch_city,branch_district,branch_taluka,branch_pincode,branch_state,branch_status} = req.body;   
     try {
 
         var DataToSave = {
+            branch_code:branch_code,
             branch_name: branch_name,
             branch_contact_person: branch_contact_person,
             branch_mobile_number: branch_mobile_number,
@@ -80,10 +81,11 @@ export const deleteBranchAction = async (req, res) => {
 };
 
 export const updateBranchAction = async (req, res) => {
-    const{branch_name,branch_contact_person,branch_mobile_number,branch_emailId,branch_area,branch_city,branch_district,branch_taluka,branch_pincode,branch_state,branch_status} = req.body;   
+    const{branch_code,branch_name,branch_contact_person,branch_mobile_number,branch_emailId,branch_area,branch_city,branch_district,branch_taluka,branch_pincode,branch_state,branch_status} = req.body;   
     try {
 
         var DataToSave = {
+            branch_code: branch_code,
             branch_name: branch_name,
             branch_contact_person: branch_contact_person,
             branch_mobile_number: branch_mobile_number,
@@ -133,6 +135,7 @@ export const getAllBranchAction = async (req, res) => {
         // const limit = 10;
         // const skip = (pageNumber - 1) * limit;
         var branch = await branchModel.aggregate([
+            {$match:{branch_status:true}},
             {
                 $project:{
                     _id:1,

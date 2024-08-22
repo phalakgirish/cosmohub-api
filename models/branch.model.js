@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 
 const {Schema} = mongoose;
 const branchSchema = new Schema({
+    branch_code: {type: String, required: true},
     branch_name: {type: String, required: true},
     branch_contact_person: { type: String, required: true },
     branch_mobile_number: { type: String, required: true },

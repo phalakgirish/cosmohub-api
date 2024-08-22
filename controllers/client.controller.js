@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import multer from 'multer';
 import clientModel from "../models/client.model.js";
+import branchModel from "../models/branch.model.js";
 
 const ObjectId = mongoose.Types.ObjectId;
 
@@ -34,9 +35,13 @@ export const createClientAction = async (req, res) => {
               else{
                 // console.log(req.body);
                 // var personalDetails = req.body.personalDetails
-                const{client_name, client_dob, client_mobile_number, client_emailId, client_gender, client_pancard, client_addharcard,client_postaladdress,client_landmark,branch_id} = req.body;
+                const{client_name, client_dob, client_mobile_number, client_emailId, client_gender, client_pancard, client_addharcard,client_postaladdress,client_landmark,client_status,branch_id} = req.body;
 
-                var clientDetails = await clientModel.find();
+                var clientDetails = await clientModel.find({branch_id:new ObjectId(branch_id)});
+
+                var branchDetails = await branchModel.find({_id:new ObjectId(branch_id)})
+
+                var Branchcode = branchDetails[0].branch_code
 
                 let ActualId = 0
                 let NewClient_Id = ''
@@ -56,12 +61,12 @@ export const createClientAction = async (req, res) => {
                 if(ActualId == 0)
                 {
                     ActualId = 1001;
-                    NewClient_Id = 'CL-'+ActualId.toString()
+                    NewClient_Id = Branchcode+'-'+ActualId.toString()
                 }
                 else
                 {
                     ActualId = ActualId+1;
-                    NewClient_Id = 'CL-'+ActualId.toString()
+                    NewClient_Id = Branchcode+'-'+ActualId.toString()
                 }
                 
                 var client_DataToSave = {
@@ -75,9 +80,10 @@ export const createClientAction = async (req, res) => {
                     client_addharcard: req.files.client_addharcard[0].filename,
                     client_postaladdress: client_postaladdress,
                     client_landmark: client_landmark,
+                    client_status:client_status,
                     branch_id:branch_id
                 }
-                console.log(client_DataToSave);
+
                 
 
                 const client = new clientModel(client_DataToSave);
@@ -160,7 +166,7 @@ export const UpdateClientAction = async (req, res) => {
               } 
               else{
 
-            const{client_id, client_name, client_dob, client_mobile_number, client_emailId, client_gender, client_pancard, client_addharcard,client_postaladdress,client_landmark,branch_id} = req.body; 
+            const{client_id, client_name, client_dob, client_mobile_number, client_emailId, client_gender, client_pancard, client_addharcard,client_postaladdress,client_landmark,client_status,branch_id} = req.body; 
 
             var client_record = await clientModel.find({_id:new ObjectId(req.params.client_id)});
 
@@ -188,6 +194,7 @@ export const UpdateClientAction = async (req, res) => {
                 client_addharcard: clientAddharCard,
                 client_postaladdress: client_postaladdress,
                 client_landmark: client_landmark,
+                client_status:client_status,
                 branch_id:branch_id
             }
 

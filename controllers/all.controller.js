@@ -15,7 +15,7 @@ export const getDepartmentByBranchIdAction = async (req, res) => {
         
         // const staff = await staffModel.find(req.params.staff_id);
         var department = await departmentModel.aggregate([
-            {$match:{branch_name:new ObjectId(req.params.branch_id)}},
+            {$match:{$and:[{branch_name:new ObjectId(req.params.branch_id)},{department_status:true}]}},
             {$project:{
                 _id:1,
                 department_name:1
@@ -36,7 +36,7 @@ export const getDesignationByDepartmentIdAction = async (req, res) => {
         
         // const staff = await staffModel.find(req.params.staff_id);
         var designation = await designationModel.aggregate([
-            {$match:{department_name:new ObjectId(req.params.department_id)}},
+            {$match:{$and:[{department_name:new ObjectId(req.params.department_id)},{designation_status:true}]}},
             {$project:{
                 _id:1,
                 designation_name:1
@@ -219,6 +219,36 @@ export const getStaffByBranchIdAction = async (req, res) => {
             }
             // console.log(client1);
             res.status(200).json({ staff });
+        // if (department.length == 0) {
+        //     return res.status(404).json({ message: 'Department not found',status:false,department });
+        // }
+        // res.status(200).json({ designation });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+export const getSipMemberByClientIdAction = async (req, res) => {
+    try {
+
+        
+        // const staff = await staffModel.find(req.params.staff_id);
+        const client_id = req.params.client_id;
+        let sipmember
+
+                sipmember = await sipMemberMgmtModel.aggregate([
+                    {$match:{$and:[{client_id:new ObjectId(client_id)},{sipmember_status:'continued'}]}},
+                    {$project:{
+                        _id:1,
+                        sipmember_id:1,
+                        sipmember_name:1
+                    }}
+                  ])
+
+            if (!sipmember) {
+                return res.status(404).json({ message: 'SIP Member not found',status:false });
+            }
+            // console.log(client1);
+            res.status(200).json({ sipmember });
         // if (department.length == 0) {
         //     return res.status(404).json({ message: 'Department not found',status:false,department });
         // }

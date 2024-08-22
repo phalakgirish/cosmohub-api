@@ -3,6 +3,9 @@ import sipMaturityModel from "../models/sipMaturity.model.js";
 import multer from 'multer';
 import sipMemberMgmtModel from "../models/sipManagerment.model.js";
 import clientModel from "../models/client.model.js";
+import sipPaymentModel from "../models/sipPayment.model.js";
+import sipSlabModel from "../models/sipSlab.model.js";
+import luckyDrawModel from "../models/luckyDraw.model.js";
 
 const ObjectId = mongoose.Types.ObjectId;
 
@@ -33,20 +36,49 @@ export const createSipMaturityAction = async (req, res) => {
               } 
               else{
 
-                const{sipmaturity_receiptno, client_id, sipmember_id, sipmember_name, sip_maturity_amount, sip_payment_mode, sip_payment_paidBy, sip_payment_paidDate,sip_maturity_doc,branch_id} = req.body;   
+                const{client_id, sipmember_id, sipmember_name, sip_maturity_amount, sip_payment_mode, sip_payment_paidBy, sip_payment_paidDate,sip_maturity_doc,branch_id} = req.body;   
 
+                var sipMaturityDetails = await sipMaturityModel.find();
+
+                let ActualNo = 0
+                let NewReceipt_No = ''
+                if(sipMaturityDetails.length > 0)
+                {
+                    for(let val of sipMaturityDetails)
+                    {
+                        const splitNumbers = val.sipmaturity_receiptno.split('-').map((num) => parseFloat(num.trim()));
+                        // console.log(splitNumbers);
+                        if(splitNumbers[1] > ActualNo)
+                        {
+                            ActualNo = splitNumbers[1];
+                        }
+                    }
+                }
+
+                if(ActualNo == 0)
+                {
+                    ActualNo = 1001;
+                    NewReceipt_No = 'SIPM-'+ActualNo.toString()
+                }
+                else
+                {
+                    ActualNo = ActualNo+1;
+                    NewReceipt_No = 'SIPM-'+ActualNo.toString()
+                }
                     var DataToSave = {
-                        sipmaturity_receiptno: sipmaturity_receiptno,
+                        sipmaturity_receiptno: NewReceipt_No,
                         client_id: client_id,
                         sipmember_id: sipmember_id,
                         sipmember_name: sipmember_name,
-                        sip_maturity_amount: sip_maturity_amount,
+                        sip_maturity_amount: parseFloat(sip_maturity_amount),
                         sip_payment_mode: sip_payment_mode,
                         sip_payment_paidBy: sip_payment_paidBy,
                         sip_payment_paidDate: sip_payment_paidDate,
                         sip_maturity_doc: req.files.sip_maturity_doc[0].filename,
                         branch_id:branch_id
                     }
+
+                    
                     const sipMPayment = new sipMaturityModel(DataToSave);
                     await sipMPayment.save();
 
@@ -63,7 +95,7 @@ export const getSipMaturityByIdAction = async (req, res) => {
         var sipMPayment = await sipMaturityModel.aggregate([
             {$match:{_id:new ObjectId(req.params.payment_id)}},
           ])
-        if (sipPayment.length == 0) {
+        if (sipMPayment.length == 0) {
             return res.status(404).json({ message: 'Payment not found',status:false });
         }
         res.status(200).json({ sipMPayment });
@@ -78,7 +110,35 @@ export const getSipMaturityAction = async (req, res) => {
         const pageNumber = req.query.page || 1;
         const limit = 10;
         const skip = (pageNumber - 1) * limit;
-        var sipMPayment = await sipMaturityModel.find().skip(skip).limit(limit)
+        var sipMPayment = await sipMaturityModel.aggregate([
+            {
+                $lookup:{
+                    from: "sip_member_mgmts",
+                    localField: "sipmember_id",
+                    foreignField: "_id",
+                    as: "Sip_id",
+                }
+            },
+            {
+                $lookup:{
+                    from: "staffs",
+                    localField: "sip_payment_paidBy",
+                    foreignField: "_id",
+                    as: "paidBy",
+                }
+            },
+            {
+                $project:{
+                    _id:1,
+                    sipmaturity_receiptno:1,
+                    Sip_id:{ $arrayElemAt: ["$Sip_id.sipmember_id", 0] },
+                    sipmember_name:1,
+                    sip_maturity_amount: 1,
+                    sip_payment_paidBy:{ $arrayElemAt: ["$paidBy.staff_name", 0] },
+                    sip_payment_paidDate:1
+                }
+            }
+        ]).skip(skip).limit(limit)
         if (!sipMPayment) {
             return res.status(404).json({ message: 'Payment not found',status:false });
         }
@@ -131,17 +191,17 @@ export const updateSipMaturityAction = async (req, res) => {
                         client_id: client_id,
                         sipmember_id: sipmember_id,
                         sipmember_name: sipmember_name,
-                        sip_maturity_amount: sip_maturity_amount,
+                        sip_maturity_amount: parseFloat(sip_maturity_amount),
                         sip_payment_mode: sip_payment_mode,
                         sip_payment_paidBy: sip_payment_paidBy,
                         sip_payment_paidDate: sip_payment_paidDate,
                         sip_maturity_doc: sipMDocument,
                         branch_id:branch_id
                     }
-
+                    
 
                     const sipMPayment = await sipMaturityModel.findByIdAndUpdate({_id:new ObjectId(req.params.maturity_id)},DataToSave);
-
+                    
                     res.status(201).json({ message: 'Payment updated successfully',status:true ,sipMPayment });
         }})
     } catch (error) {
@@ -169,6 +229,46 @@ export const getSipMaturityAmountBySipIdAction = async (req, res) => {
         }
         // console.log(staff1);
         res.status(200).json({ sipMPayment });
+        
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+export const getSipPaidAmountAction = async (req, res) => {
+    try {
+
+        var sipMPayment = await sipPaymentModel.aggregate([
+            {$match:{sipmember_id:new ObjectId(req.params.sip_id)}},
+            {
+                $group:{
+                    _id:"$sipmember_id",
+                    totalSipAmount:{$sum:"$sip_amount"},
+                    monthCount:{$sum:1}
+
+                }
+            }
+        ]);
+
+
+        var luckyDarawDetails = await luckyDrawModel.find({$and:[{spimember_id:new ObjectId(req.params.sip_id)},{payment_status:'Pending'}]})
+
+        console.log(luckyDarawDetails);
+
+        var sip_slab_bonus_Amount = await sipSlabModel.find({$and:[{sip_slab_from:{$lte:sipMPayment[0].monthCount}},{sip_slab_to:{$gte:sipMPayment[0].monthCount}},{sip_rank:luckyDarawDetails[0].luckydraw_rank}]});
+
+        console.log(sip_slab_bonus_Amount);
+        
+        var total_amount = sip_slab_bonus_Amount[0].sip_amount +sipMPayment[0].totalSipAmount
+
+        console.log(total_amount);
+        
+        
+        // if (!sipMPayment) {
+        //     return res.status(404).json({ message: 'Payment not found',status:false });
+        // }
+        // console.log(staff1);
+        res.status(200).json({ sipMAmount: total_amount });
         
     } catch (error) {
         res.status(400).json({ error: error.message });

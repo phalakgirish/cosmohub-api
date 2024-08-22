@@ -5,7 +5,7 @@ const {Schema} = mongoose;
 const sipSlabSchema = new Schema({
     sip_slab_from: { type: Number, required: true },
     sip_slab_to: { type: Number, required: true },
-    sip_rank: {type: Number, required:true },
+    sip_rank: {type: String, required:true },
     sip_amount: {type: Number, required:true },
     sip_type: { type: String, required:true },
     sip_status: { type: String, required: true },

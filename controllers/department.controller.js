@@ -153,6 +153,8 @@ export const getAllDepartmentAction = async (req, res) => {
         if(req.params.branch_id == '0')
         {
             department = await departmentModel.aggregate([
+
+                {$match:{department_status:true}},
                 {
                     $project:{
                         _id:1,
@@ -164,7 +166,7 @@ export const getAllDepartmentAction = async (req, res) => {
         else
         {
             department = await departmentModel.aggregate([
-                {$match:{branch_name:new ObjectId(req.params.branch_id)}},
+                {$match:{$and:[{branch_name:new ObjectId(req.params.branch_id)},{department_status:true}]}},
                 {
                     $project:{
                         _id:1,
