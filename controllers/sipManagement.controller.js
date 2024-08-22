@@ -101,13 +101,13 @@ export const createSipMemberAction = async (req, res) => {
 export const getSipMemberByIdAction = async (req, res) => {
     try {
         // const staff = await staffModel.find(req.params.staff_id);
-        var staff = await sipMemberMgmtModel.aggregate([
+        var sip_member = await sipMemberMgmtModel.aggregate([
             {$match:{_id:new ObjectId(req.params.sip_id)}},
           ])
-        if (staff.length == 0) {
+        if (sip_member.length == 0) {
             return res.status(404).json({ message: 'SIP Member not found',status:false });
         }
-        res.status(200).json({ staff });
+        res.status(200).json({ sip_member });
     } catch (error) {
         res.status(400).json({ error: error.message,status:false });
     }
@@ -142,13 +142,13 @@ export const getSipMembersAction = async (req, res) => {
                   sipmember_nominee_age:1,
                   sipmember_nominee_relation:1,
                   sipmember_nominee_mobile:1,
+                  sipmember_status:1
                 }
               }
         ])
         
-        .skip(skip).limit(limit)
-
-
+        .skip(skip).limit(limit);
+        
         if (!sip_member) {
             return res.status(404).json({ message: 'SIP Members not found',status:false });
         }

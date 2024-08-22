@@ -15,6 +15,9 @@ import sipPaymentRouter from "./routes/sipPayment.route.js";
 import luckyDrawRouter from "./routes/luckyDraw.route.js";
 import sipManagementRouter from "./routes/sipManagement.route.js";
 import allRouter from "./routes/all.route.js";
+import { fileURLToPath } from 'url'
+// const path = require('path');
+import path from 'node:path';
 
 
 
@@ -41,6 +44,11 @@ app.use('/sippayment',sipPaymentRouter)
 app.use('/luckydraw',luckyDrawRouter)
 app.use('/sipmanagement',sipManagementRouter)
 app.use('/all',allRouter)
+
+const __filename = fileURLToPath(import.meta.url);
+const _dirname = path.dirname(__filename);
+
+app.use('/images',express.static(path.join(_dirname,'/assets/uploads')))
 
 
 
