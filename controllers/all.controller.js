@@ -153,7 +153,7 @@ export const getSipMemberByBranchIdAction = async (req, res) => {
           if(branch_id == '0')
             {
                 sipmember = await sipMemberMgmtModel.aggregate([
-                    {$match:{sipmember_status:'continued'}},
+                    {$match:{sipmember_status:'Continue'}},
                     {$project:{
                         _id:1,
                         sipmember_id:1,
@@ -164,7 +164,7 @@ export const getSipMemberByBranchIdAction = async (req, res) => {
             else
             {
                 sipmember = await sipMemberMgmtModel.aggregate([
-                    {$match:{$and:[{branch_id:new ObjectId(req.params.branch_id)},{sipmember_status:'continued'}]}},
+                    {$match:{$and:[{branch_id:new ObjectId(req.params.branch_id)},{sipmember_status:'Continue'}]}},
                     {$project:{
                         _id:1,
                         sipmember_id:1,
@@ -236,7 +236,7 @@ export const getSipMemberByClientIdAction = async (req, res) => {
         let sipmember
 
                 sipmember = await sipMemberMgmtModel.aggregate([
-                    {$match:{$and:[{client_id:new ObjectId(client_id)},{sipmember_status:'continued'}]}},
+                    {$match:{$and:[{client_id:new ObjectId(client_id)},{sipmember_status:'Continue'}]}},
                     {$project:{
                         _id:1,
                         sipmember_id:1,

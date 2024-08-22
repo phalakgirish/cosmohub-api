@@ -18,6 +18,7 @@ import allRouter from "./routes/all.route.js";
 import { fileURLToPath } from 'url'
 // const path = require('path');
 import path from 'node:path';
+import userRouter from "./routes/user.route.js";
 
 
 
@@ -44,6 +45,8 @@ app.use('/sippayment',sipPaymentRouter)
 app.use('/luckydraw',luckyDrawRouter)
 app.use('/sipmanagement',sipManagementRouter)
 app.use('/all',allRouter)
+app.use('/users',userRouter)
+
 
 const __filename = fileURLToPath(import.meta.url);
 const _dirname = path.dirname(__filename);

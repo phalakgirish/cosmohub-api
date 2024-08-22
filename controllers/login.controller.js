@@ -25,6 +25,10 @@ export const loginActionFunction = async function(req,res){
         {
             res.send({msg:"User Email Id Not Found.",status:false});
         }
+        else if(ans_username.user_status === false)
+        {
+            res.send({msg:"User Email Id Is Inactive, Please Contact Admin !!",status:false});
+        }
         else
         {
             var ans_pass = bcryptjs.compareSync(user_password,ans_username['user_password']);

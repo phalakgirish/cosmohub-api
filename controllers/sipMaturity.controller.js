@@ -78,9 +78,34 @@ export const createSipMaturityAction = async (req, res) => {
                         branch_id:branch_id
                     }
 
-                    
                     const sipMPayment = new sipMaturityModel(DataToSave);
                     await sipMPayment.save();
+
+                    var sipMPaymentDetails = await sipPaymentModel.aggregate([
+                        {$match:{sipmember_id:new ObjectId(sipmember_id)}}
+                    ]).sort({sip_payment_month:1});
+
+                    
+                    var getStartDateOfSIP = getDateOfMonth(sipMPaymentDetails[0].sip_payment_month,'Start')
+
+                    var sipLuckyDrawDetils = await luckyDrawModel.find({$and:[{spimember_id:new ObjectId(sipmember_id)},{payment_status:'Pending'}]})
+
+                    
+
+                    for(let val of sipLuckyDrawDetils)
+                    {
+                        var getEndDateofMonth = getDateOfMonth(val.luckydraw_month,'End')
+                        var monthcount = getMonthDifference(getStartDateOfSIP,getEndDateofMonth)
+                
+                        var sip_slab_bonus_Amount = await sipSlabModel.find({$and:[{sip_slab_from:{$lte:monthcount}},{sip_slab_to:{$gte:monthcount}},{sip_rank:val.luckydraw_rank}]});
+
+                        var sip_luckyDrawUpdate = await luckyDrawModel.updateOne({_id:new ObjectId(val._id)},{$set:{payment_status:'Done'}})
+
+                        if(val.luckydraw_rank == '1' && sip_slab_bonus_Amount[0].sip_status == 'Discontinue')
+                        {
+                            var sip_member = await sipMemberMgmtModel.updateOne({_id:new ObjectId(sipmember_id)},{$set:{sipmember_status:'Discontinue'}})
+                        }
+                    }
 
                     res.status(201).json({ message: 'Payment added successfully',status:true ,sipMPayment });
         }})
@@ -250,18 +275,46 @@ export const getSipPaidAmountAction = async (req, res) => {
             }
         ]);
 
+        var sipMPaymentDetails = await sipPaymentModel.aggregate([
+            {$match:{sipmember_id:new ObjectId(req.params.sip_id)}}
+        ]).sort({sip_payment_month:1});
 
-        var luckyDarawDetails = await luckyDrawModel.find({$and:[{spimember_id:new ObjectId(req.params.sip_id)},{payment_status:'Pending'}]})
 
-        console.log(luckyDarawDetails);
+        var getStartDateOfSIP = getDateOfMonth(sipMPaymentDetails[0].sip_payment_month,'Start')
 
-        var sip_slab_bonus_Amount = await sipSlabModel.find({$and:[{sip_slab_from:{$lte:sipMPayment[0].monthCount}},{sip_slab_to:{$gte:sipMPayment[0].monthCount}},{sip_rank:luckyDarawDetails[0].luckydraw_rank}]});
 
-        console.log(sip_slab_bonus_Amount);
+
+        var luckyDarawDetails = await luckyDrawModel.find({$and:[{spimember_id:new ObjectId(req.params.sip_id)},{payment_status:'Pending'}]}).sort({luckydraw_month:1})
+
+        // console.log(luckyDarawDetails);
+        var total_amount = 0
+
+        if(luckyDarawDetails.length > 0)
+        {
+            for(let val of luckyDarawDetails)
+            {
+                var getEndDateofMonth = getDateOfMonth(val.luckydraw_month,'End')
+                var monthcount = getMonthDifference(getStartDateOfSIP,getEndDateofMonth)
+                
+                var sip_slab_bonus_Amount = await sipSlabModel.find({$and:[{sip_slab_from:{$lte:monthcount}},{sip_slab_to:{$gte:monthcount}},{sip_rank:val.luckydraw_rank}]});
+
+                total_amount = total_amount + sip_slab_bonus_Amount[0].sip_amount
+
+                if(val.luckydraw_rank == '1')
+                {
+                    total_amount = total_amount + sipMPayment[0].totalSipAmount
+                }
+
+            }
+        }
+
+        // var sip_slab_bonus_Amount = await sipSlabModel.find({$and:[{sip_slab_from:{$lte:sipMPayment[0].monthCount}},{sip_slab_to:{$gte:sipMPayment[0].monthCount}},{sip_rank:luckyDarawDetails[0].luckydraw_rank}]});
+
+        // console.log(sip_slab_bonus_Amount);
         
-        var total_amount = sip_slab_bonus_Amount[0].sip_amount +sipMPayment[0].totalSipAmount
+        // var total_amount = sip_slab_bonus_Amount[0].sip_amount +sipMPayment[0].totalSipAmount
 
-        console.log(total_amount);
+        // console.log(total_amount);
         
         
         // if (!sipMPayment) {
@@ -274,6 +327,39 @@ export const getSipPaidAmountAction = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 };
+
+const getDateOfMonth = (monthstr,pos)=>{
+    const [year, month] = monthstr.split('-').map(Number);
+    let MonthDate
+    // Start date of the month
+    if(pos == 'Start')
+    {
+        MonthDate = new Date(year, month - 1, 1);
+    }
+    else
+    {
+        MonthDate = new Date(year, month, 0);
+    }
+    
+    MonthDate.setMinutes(MonthDate.getMinutes()+330);
+
+  return MonthDate;
+}
+
+const getMonthDifference = (fromDate, toDate)=>{
+
+    const fromYear = fromDate.getFullYear();
+    const fromMonth = fromDate.getMonth();
+    const toYear = toDate.getFullYear();
+    const toMonth = toDate.getMonth();
+
+    // Calculate the difference in years and months
+    const yearDifference = toYear - fromYear;
+    const monthDifference = (toMonth - fromMonth)+1;
+
+    // Total months difference
+    return yearDifference * 12 + monthDifference;
+}
 
 
 
