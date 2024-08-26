@@ -39,7 +39,7 @@ const storage = multer.diskStorage({
 //   const upload = multer({ storage: storage }).single('staff_pancard');
 
 export const createStaffAction = async (req, res) => {
-    console.log(req.body);
+
        
     try
     {
