@@ -53,7 +53,7 @@ export const createSipPaymentAction = async (req, res) => {
         const sipPayment = new sipPaymentModel(DataToSave);
         await sipPayment.save();
 
-        res.status(201).json({ message: 'Payment added successfully',status:true ,sipPayment });
+        res.status(201).json({ message: 'SIP Payment added successfully',status:true ,sipPayment });
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
@@ -127,7 +127,7 @@ export const deleteSipPaymentAction = async (req, res) => {
     try {
 
         var sipPayment = await sipPaymentModel.deleteOne({_id:new ObjectId(req.params.payment_id)})
-        res.status(201).json({ message: 'Payment deleted successfully',status:true, sipPayment });
+        res.status(201).json({ message: 'SIP Payment deleted successfully',status:true, sipPayment });
 
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -158,7 +158,7 @@ export const updateSipPaymentAction = async (req, res) => {
         const sipPayment = await sipPaymentModel.findByIdAndUpdate({_id:new ObjectId(req.params.payment_id)},DataToSave);
 
 
-        res.status(201).json({ message: 'Payment updated successfully',status:true ,sipPayment });
+        res.status(201).json({ message: 'SIP Payment updated successfully',status:true ,sipPayment });
     } catch (error) {
         res.status(400).json({ error: error.message });
     }

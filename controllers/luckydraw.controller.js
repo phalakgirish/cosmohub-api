@@ -82,7 +82,7 @@ export const deleteLuckyDrawAction = async (req, res) => {
     try {
 
         var luckyDraw = await luckyDrawModel.deleteOne({_id:new ObjectId(req.params.luckydraw_id)})
-        res.status(201).json({ message: 'Record deleted successfully',status:true, luckyDraw });
+        res.status(201).json({ message: 'Luck Draw deleted successfully',status:true, luckyDraw });
 
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -104,7 +104,7 @@ export const updateLuckyDrawAction = async (req, res) => {
         const luckyDraw = await luckyDrawModel.findByIdAndUpdate({_id:new ObjectId(req.params.luckydraw_id)},DataToSave);
 
 
-        res.status(201).json({ message: 'Record updated successfully',status:true ,luckyDraw });
+        res.status(201).json({ message: 'Lucku Draw updated successfully',status:true ,luckyDraw });
     } catch (error) {
         res.status(400).json({ error: error.message });
     }

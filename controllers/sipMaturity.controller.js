@@ -107,7 +107,7 @@ export const createSipMaturityAction = async (req, res) => {
                         }
                     }
 
-                    res.status(201).json({ message: 'Payment added successfully',status:true ,sipMPayment });
+                    res.status(201).json({ message: 'SIP Maturity Payment added successfully',status:true ,sipMPayment });
         }})
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -179,7 +179,7 @@ export const deleteSipMaturityAction = async (req, res) => {
     try {
 
         var sipMPayment = await sipMaturityModel.deleteOne({_id:new ObjectId(req.params.payment_id)})
-        res.status(201).json({ message: 'Payment deleted successfully',status:true, sipMPayment });
+        res.status(201).json({ message: 'SIP Maturity Payment deleted successfully',status:true, sipMPayment });
 
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -227,7 +227,7 @@ export const updateSipMaturityAction = async (req, res) => {
 
                     const sipMPayment = await sipMaturityModel.findByIdAndUpdate({_id:new ObjectId(req.params.maturity_id)},DataToSave);
                     
-                    res.status(201).json({ message: 'Payment updated successfully',status:true ,sipMPayment });
+                    res.status(201).json({ message: 'SIP Maturity Payment updated successfully',status:true ,sipMPayment });
         }})
     } catch (error) {
         res.status(400).json({ error: error.message });
