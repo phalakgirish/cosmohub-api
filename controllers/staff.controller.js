@@ -4,6 +4,7 @@ import bcryptjs from 'bcryptjs';
 import generator from 'generate-password'; 
 import multer from 'multer';
 import userModel from '../models/user.model.js';
+import SendEmail from '../env/SendEmail.js';
 
 var salt = bcryptjs.genSaltSync(10);
 
@@ -53,7 +54,7 @@ export const createStaffAction = async (req, res) => {
               } 
               else{
                 const{staff_name,staff_dob,staff_mobile_number,staff_emailId,staff_gender,staff_pancard,staff_addharcard,staff_role_type,staff_department,staff_designation,staff_branch,staff_doj} = req.body;
-                console.log(req.body);
+
                 
                 var staffDetails = await staffModel.find();
 
@@ -119,7 +120,7 @@ export const createStaffAction = async (req, res) => {
                 await uses_data.save();
 
                 var usesCreatedData = {staff_email_id:staff_emailId,password:password}
-                
+                SendEmail(usesCreatedData.staff_email_id,usesCreatedData.password)
                 res.status(201).json({ message: 'Staff added successfully',status:true ,usesCreatedData:usesCreatedData});
             }
         });

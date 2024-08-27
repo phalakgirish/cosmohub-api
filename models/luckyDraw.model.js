@@ -7,7 +7,7 @@ const luckyDrawSchema = new Schema({
     spimember_id: { type: mongoose.Schema.ObjectId, required: true },
     luckydraw_rank: { type: String, required: true },
     payment_status: { type: String },
-    branch_id:{ type: mongoose.Schema.ObjectId, required:true }
+    // branch_id:{ type: mongoose.Schema.ObjectId, required:true }
 });
 
 const luckyDrawModel = mongoose.model('spi_luckdraw', luckyDrawSchema);

@@ -9,7 +9,7 @@ const sipSlabSchema = new Schema({
     sip_amount: {type: Number, required:true },
     sip_type: { type: String, required:true },
     sip_status: { type: String, required: true },
-    branch_id:{ type: mongoose.Schema.ObjectId, required:true }
+    // branch_id:{ type: mongoose.Schema.ObjectId, required:true }
 
 });
 

@@ -19,6 +19,7 @@ import { fileURLToPath } from 'url'
 // const path = require('path');
 import path from 'node:path';
 import userRouter from "./routes/user.route.js";
+import reportRouter from "./routes/report.route.js";
 
 
 
@@ -46,6 +47,7 @@ app.use('/luckydraw',luckyDrawRouter)
 app.use('/sipmanagement',sipManagementRouter)
 app.use('/all',allRouter)
 app.use('/users',userRouter)
+app.use('/report',reportRouter)
 
 
 const __filename = fileURLToPath(import.meta.url);

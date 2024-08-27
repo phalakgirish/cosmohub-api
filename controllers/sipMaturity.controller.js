@@ -307,20 +307,7 @@ export const getSipPaidAmountAction = async (req, res) => {
 
             }
         }
-
-        // var sip_slab_bonus_Amount = await sipSlabModel.find({$and:[{sip_slab_from:{$lte:sipMPayment[0].monthCount}},{sip_slab_to:{$gte:sipMPayment[0].monthCount}},{sip_rank:luckyDarawDetails[0].luckydraw_rank}]});
-
-        // console.log(sip_slab_bonus_Amount);
         
-        // var total_amount = sip_slab_bonus_Amount[0].sip_amount +sipMPayment[0].totalSipAmount
-
-        // console.log(total_amount);
-        
-        
-        // if (!sipMPayment) {
-        //     return res.status(404).json({ message: 'Payment not found',status:false });
-        // }
-        // console.log(staff1);
         res.status(200).json({ sipMAmount: total_amount });
         
     } catch (error) {

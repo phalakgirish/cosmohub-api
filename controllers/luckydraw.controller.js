@@ -13,7 +13,7 @@ export const createLuckyDrawAction = async (req, res) => {
             spimember_id: spimember_id,
             luckydraw_rank: luckydraw_rank,
             payment_status: payment_status,
-            branch_id:branch_id
+            // branch_id:branch_id
         }
         const luckyDraw = new luckyDrawModel(DataToSave);
         await luckyDraw.save();
@@ -98,7 +98,7 @@ export const updateLuckyDrawAction = async (req, res) => {
             spimember_id: spimember_id,
             luckydraw_rank: luckydraw_rank,
             payment_status: payment_status,
-            branch_id:branch_id
+            // branch_id:branch_id
         }
         
         const luckyDraw = await luckyDrawModel.findByIdAndUpdate({_id:new ObjectId(req.params.luckydraw_id)},DataToSave);

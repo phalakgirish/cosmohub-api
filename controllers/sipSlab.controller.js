@@ -17,7 +17,7 @@ export const createSipSlabAction = async (req, res) => {
             sip_amount: sip_amount,
             sip_type: sip_type,
             sip_status: sip_status,
-            branch_id:branch_id
+            // branch_id:branch_id
         }
 
         
@@ -115,7 +115,7 @@ export const updateSipSlabAction = async (req, res) => {
             sip_amount: sip_amount,
             sip_type: sip_type,
             sip_status: sip_status,
-            branch_id:branch_id
+            // branch_id:branch_id
         }
         
         

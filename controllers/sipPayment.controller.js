@@ -53,7 +53,43 @@ export const createSipPaymentAction = async (req, res) => {
         const sipPayment = new sipPaymentModel(DataToSave);
         await sipPayment.save();
 
-        res.status(201).json({ message: 'SIP Payment added successfully',status:true ,sipPayment });
+        var sipPaymentReciept = await sipPaymentModel.aggregate([
+            {$match:{_id:new ObjectId(sipPayment._id)}},
+            {
+                $lookup:{
+                    from: "sip_member_mgmts",
+                    localField: "sipmember_id",
+                    foreignField: "_id",
+                    as: "Sip_id",
+                }
+            },
+            {
+                $lookup:{
+                    from: "staffs",
+                    localField: "sip_payment_receivedBy",
+                    foreignField: "_id",
+                    as: "receivedBy",
+                }
+            },
+            {
+                $project:{
+                    _id:1,
+                    sippayment_receiptno:1,
+                    Sip_id:{ $arrayElemAt: ["$Sip_id.sipmember_id", 0] },
+                    sipmember_name:1,
+                    sip_payment_month: 1,
+                    sip_amount: 1,
+                    sip_payment_mode:1,
+                    sip_payment_refno:1,
+                    sip_payment_receivedBy:{ $arrayElemAt: ["$receivedBy.staff_name", 0] },
+                    sip_payment_receivedDate:1
+                }
+            }
+        ])
+
+
+
+        res.status(201).json({ message: 'SIP Payment added successfully',status:true ,sipPayment,sipPaymentReciept });
     } catch (error) {
         res.status(400).json({ error: error.message });
     }

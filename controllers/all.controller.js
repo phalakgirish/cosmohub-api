@@ -257,3 +257,34 @@ export const getSipMemberByClientIdAction = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 };
+
+export const getSipMemberByClientIdReportAction = async (req, res) => {
+    try {
+
+        
+        // const staff = await staffModel.find(req.params.staff_id);
+        const client_id = req.params.client_id;
+        let sipmember
+
+                sipmember = await sipMemberMgmtModel.aggregate([
+                    {$match:{client_id:new ObjectId(client_id)}},
+                    {$project:{
+                        _id:1,
+                        sipmember_id:1,
+                        sipmember_name:1
+                    }}
+                  ])
+
+            if (!sipmember) {
+                return res.status(404).json({ message: 'SIP Member not found',status:false });
+            }
+            // console.log(client1);
+            res.status(200).json({ sipmember });
+        // if (department.length == 0) {
+        //     return res.status(404).json({ message: 'Department not found',status:false,department });
+        // }
+        // res.status(200).json({ designation });
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
