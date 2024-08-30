@@ -20,6 +20,7 @@ import { fileURLToPath } from 'url'
 import path from 'node:path';
 import userRouter from "./routes/user.route.js";
 import reportRouter from "./routes/report.route.js";
+import dashboardRouter from "./routes/dashboard.route.js";
 
 
 
@@ -48,6 +49,8 @@ app.use('/sipmanagement',sipManagementRouter)
 app.use('/all',allRouter)
 app.use('/users',userRouter)
 app.use('/report',reportRouter)
+app.use('/dashboard',dashboardRouter)
+
 
 
 const __filename = fileURLToPath(import.meta.url);

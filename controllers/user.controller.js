@@ -90,6 +90,7 @@ export const updateUsersAction = async (req,res)=>{
 
     const {user_status} = req.body;
 
+    
     var users_id = req.params.user_id;
     var users = await userModel.updateOne({_id:new ObjectId(users_id)},{$set:{user_status:user_status}})
 

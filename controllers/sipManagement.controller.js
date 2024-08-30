@@ -271,3 +271,90 @@ export const getSipMemberByBranchIdAction = async (req, res) => {
         res.status(400).json({ error: error.message,status:false });
     }
 };
+
+export const createSipMemberReplicaByIdAction = async (req, res) => {
+
+    
+    try {
+        
+        var sip_member = await sipMemberMgmtModel.aggregate([
+            {$match:{_id:new ObjectId(req.params.sip_id)}},
+          ])
+
+        if (sip_member.length == 0) {
+            return res.status(404).json({ message: 'SIP Member not found',status:false });
+        }
+        
+        
+        let sipemberDetails = sip_member[0]
+        var sipDetails = await sipMemberMgmtModel.find();
+
+        let ActualId = 0
+        let NewSip_Id = ''
+        if(sipDetails.length > 0)
+        {
+            for(let val of sipDetails)
+            {
+                const splitNumbers = val.sipmember_id.split('-').map((num) => parseFloat(num.trim()));
+                // console.log(splitNumbers);
+                if(splitNumbers[1] > ActualId)
+                {
+                    ActualId = splitNumbers[1];
+                }
+            }
+        }
+
+        if(ActualId == 0)
+        {
+            ActualId = 1001;
+            NewSip_Id = 'SIP-'+ActualId.toString()
+        }
+        else
+        {
+            ActualId = ActualId+1;
+            NewSip_Id = 'SIP-'+ActualId.toString()
+        }
+
+        
+        var today = new Date()
+        today.setMinutes(today.getMinutes()+330);
+        today.setUTCHours(0,0,0,0);
+        var JoiningDate = today.toISOString();
+
+        today.setMonth(today.getMonth()+30);
+        var MaturityDate = today.toISOString();
+
+        // console.log(sipemberDetails);  
+        
+        var sip_DataToSave = {
+            sipmember_id: NewSip_Id,
+            client_id:sipemberDetails.client_id,
+            sipmember_name: sipemberDetails.sipmember_name,
+            sipmember_bank_name: sipemberDetails.sipmember_bank_name,
+            sipmember_account_number: sipemberDetails.sipmember_account_number,
+            sipmember_ifsc_code: sipemberDetails.sipmember_ifsc_code,
+            sipmember_upi_id: sipemberDetails.sipmember_upi_id,
+            sipmember_doj: new Date(JoiningDate),
+            sipmember_maturity_date: new Date(MaturityDate),
+            sipmember_nominee_name: sipemberDetails.sipmember_nominee_name,
+            sipmember_nominee_age: parseInt(sipemberDetails.sipmember_nominee_age),
+            sipmember_nominee_relation: sipemberDetails.sipmember_nominee_relation,
+            sipmember_nominee_mobile: sipemberDetails.sipmember_nominee_mobile,
+            sipmember_nominee_pancard: sipemberDetails.sipmember_nominee_pancard,
+            sipmember_nominee_addharcard: sipemberDetails.sipmember_nominee_addharcard,
+            sipmember_status:'Continue',
+            branch_id:sipemberDetails.branch_id
+        }
+
+        const sip_management = new sipMemberMgmtModel(sip_DataToSave);
+        await sip_management.save();
+
+
+        
+        res.status(200).json({ message:'SIP Member Added Succesfully, with SIP Id: '+sip_management.sipmember_id, status:true});
+    } catch (error) {
+        res.status(400).json({ error: error.message,status:false });
+    }
+};
+
+

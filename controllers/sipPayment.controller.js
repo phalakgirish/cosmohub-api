@@ -114,7 +114,7 @@ export const getSipPaymentAction = async (req, res) => {
     try {
 
         const pageNumber = req.query.page || 1;
-        const limit = 10;
+        const limit = 100;
         const skip = (pageNumber - 1) * limit;
         var sipPayment = await sipPaymentModel.aggregate([
             {
