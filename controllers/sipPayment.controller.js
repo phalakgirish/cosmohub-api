@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 import sipPaymentModel from "../models/sipPayment.model.js";
+import sipMemberMgmtModel from "../models/sipManagerment.model.js";
+
 
 
 const ObjectId = mongoose.Types.ObjectId;
@@ -199,3 +201,120 @@ export const updateSipPaymentAction = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 };
+
+export const getPenaltyAmountBySIPMemberIdction = async (req, res) => {
+
+    const{sip_id,month,date} = req.body;   
+    console.log(req.body);
+    
+
+    try {
+
+        const sip_member_dts = await sipMemberMgmtModel.find({_id:new ObjectId(sip_id)})
+
+        var SIPMonths = getYearMonthRange(sip_member_dts[0].sipmember_doj,sip_member_dts[0].sipmember_maturity_date);
+
+        // console.log(SIPMonths);
+        let PenaltyCount = 0
+        let receivedDate = new Date(date);
+        let penaltyAmount = 0;
+        // console.log(receivedDate);
+        
+
+        var MonthMonthStartDate = getDateOfMonth(month,'Start')
+        var MonthMonthEndDate = getDateOfMonth(month,'End')
+        
+        
+
+        if(receivedDate >= MonthMonthStartDate && receivedDate <= MonthMonthEndDate)
+        {
+            var currentMonthIndex = SIPMonths.indexOf(month)
+
+            var previousMonths = SIPMonths.slice(currentMonthIndex-2,currentMonthIndex)
+
+            for(let val of previousMonths)
+            {
+                let month10thDay = getDateOfMonth(val,'')
+
+                let sipMonthData = await sipPaymentModel.find({$and:[{sip_payment_month:val.toString()},{sipmember_id:new ObjectId(sip_id)}]});
+
+                let sipPaymentDetails = sipMonthData[0]
+
+                if(sipPaymentDetails.sip_payment_receivedDate > month10thDay && sipPaymentDetails.sip_penalty_amount == 0)
+                { 
+                    PenaltyCount = PenaltyCount + 1
+                }
+            }
+
+            let currentMonth10thDate = getDateOfMonth(month,'10th')
+            let todaysDate = new Date(date)
+            if(todaysDate > currentMonth10thDate)
+            {
+                PenaltyCount = PenaltyCount + 1
+            }
+
+            
+        }
+        console.log(PenaltyCount);
+        
+        for(let i = 1; i<=PenaltyCount; i++)
+        {
+            if(i == 1)
+                penaltyAmount = 250
+            else
+                penaltyAmount = penaltyAmount * 2   
+        }
+
+        res.status(201).json({ message: 'SIP Payment updated successfully',status:true, penaltyAmount});
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
+
+const getDateOfMonth = (monthstr,pos)=>{
+
+
+    const [year, month] = monthstr.split('-').map(Number);
+    let MonthDate
+    // Start date of the month
+    if(pos == 'Start')
+    {
+        MonthDate = new Date(year, month - 1, 1);
+    }
+    else if(pos == '10th')
+    {
+        MonthDate = new Date(year, month-1, 10);
+    }
+    else
+    {
+        MonthDate = new Date(year, month, 0);
+    }
+    
+    
+    if(pos != 'Start')
+    {
+        MonthDate.setHours(29,29,59,0)
+    }
+    else
+    {
+        MonthDate.setMinutes(MonthDate.getMinutes()+330);
+    }
+    return MonthDate;
+}
+
+const getYearMonthRange = (startDate, endDate)=>{
+    const months = [];
+    const currentDate = new Date(startDate);
+    const end = new Date(endDate);
+
+    while (currentDate <= end) {
+        const year = currentDate.getFullYear();
+        const month = String(currentDate.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+        months.push(`${year}-${month}`);
+
+        // Move to the next month
+        currentDate.setMonth(currentDate.getMonth() + 1);
+    }
+
+    return months;
+}

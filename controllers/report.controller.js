@@ -11,7 +11,7 @@ export const getMonthWisePaymentAction = async (req,res)=>{
         const branchId = req.query.branchId;
         const month = req.query.month
 
-        var query = month=='' ?{}:{ sip_payment_month: month };
+        var query = { sip_payment_month: month };
         let sipPayment
         if(branchId == "0")
         {
@@ -34,6 +34,14 @@ export const getMonthWisePaymentAction = async (req,res)=>{
                     }
                 },
                 {
+                    $lookup:{
+                        from:'branches',
+                        localField:'branch_id',
+                        foreignField:'_id',
+                        as:'branch'
+                    }
+                },
+                {
                     $project:{
                         _id:1,
                         sippayment_receiptno:1,
@@ -46,7 +54,8 @@ export const getMonthWisePaymentAction = async (req,res)=>{
                         sip_payment_mode: 1,
                         sip_payment_refno: 1,
                         sip_payment_receivedBy:{ $arrayElemAt: ["$receivedBy.staff_name", 0] },
-                        sip_payment_receivedDate:1
+                        sip_payment_receivedDate:1,
+                        branch:{ $arrayElemAt: ["$branch.branch_name", 0] }
                     }
                 }
             ])
@@ -72,6 +81,14 @@ export const getMonthWisePaymentAction = async (req,res)=>{
                     }
                 },
                 {
+                    $lookup:{
+                        from:'branches',
+                        localField:'branch_id',
+                        foreignField:'_id',
+                        as:'branch'
+                    }
+                },
+                {
                     $project:{
                         _id:1,
                         sippayment_receiptno:1,
@@ -84,13 +101,13 @@ export const getMonthWisePaymentAction = async (req,res)=>{
                         sip_payment_mode: 1,
                         sip_payment_refno: 1,
                         sip_payment_receivedBy:{ $arrayElemAt: ["$receivedBy.staff_name", 0] },
-                        sip_payment_receivedDate:1
+                        sip_payment_receivedDate:1,
+                        branch:{ $arrayElemAt: ["$branch.branch_name", 0] }
                     }
                 }
             ])
         }
-        
-        
+               
 
         if (!sipPayment) {
             return res.status(404).json({ message: 'Payment not found',status:false });
@@ -237,3 +254,4 @@ export const getSIPMemberDetailsAction = async (req,res)=>{
         res.status(400).json({ error: error.message });
     }
 }
+
