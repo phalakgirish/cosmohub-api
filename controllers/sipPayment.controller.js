@@ -205,7 +205,7 @@ export const updateSipPaymentAction = async (req, res) => {
 export const getPenaltyAmountBySIPMemberIdction = async (req, res) => {
 
     const{sip_id,month,date} = req.body;   
-    console.log(req.body);
+    // console.log(req.body);
     
 
     try {
@@ -255,7 +255,7 @@ export const getPenaltyAmountBySIPMemberIdction = async (req, res) => {
 
             
         }
-        console.log(PenaltyCount);
+        // console.log(PenaltyCount);
         
         for(let i = 1; i<=PenaltyCount; i++)
         {
