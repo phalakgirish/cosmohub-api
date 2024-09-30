@@ -10,14 +10,7 @@ const ObjectId = mongoose.Types.ObjectId;
 
 const SECRET = 'asded785685asd';
 
-var password = generator.generate({ 
-    length: 8, 
-    numbers: true, 
-    symbols: true, 
-    uppercase: false, 
-    excludeSimilarCharacters: true, 
-    strict: true,     
-}); 
+
 
 export const createAllUsersByBranchIdAction = async (req,res)=>{
 
@@ -106,6 +99,15 @@ export const updateUsersChangePasswordAction = async (req,res)=>{
 
     var users_id = req.params.user_id;
     var ans_username = await userModel.findOne({_id:new ObjectId(users_id)});
+
+    var password = generator.generate({ 
+        length: 8, 
+        numbers: true, 
+        symbols: true, 
+        uppercase: false, 
+        excludeSimilarCharacters: true, 
+        strict: true,     
+    }); 
 
     var password_encrypt = bcryptjs.hashSync(password, salt);
 

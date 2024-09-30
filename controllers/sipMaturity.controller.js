@@ -263,6 +263,7 @@ export const getSipMaturityAmountBySipIdAction = async (req, res) => {
 export const getSipPaidAmountAction = async (req, res) => {
     try {
 
+        
         var sipMPayment = await sipPaymentModel.aggregate([
             {$match:{sipmember_id:new ObjectId(req.params.sip_id)}},
             {
@@ -274,23 +275,19 @@ export const getSipPaidAmountAction = async (req, res) => {
                 }
             }
         ]);
+        
 
         var sipMPaymentDetails = await sipPaymentModel.aggregate([
             {$match:{sipmember_id:new ObjectId(req.params.sip_id)}}
         ]).sort({sip_payment_month:1});
 
-
-        var getStartDateOfSIP = getDateOfMonth(sipMPaymentDetails[0].sip_payment_month,'Start')
-
-
-
         var luckyDarawDetails = await luckyDrawModel.find({$and:[{spimember_id:new ObjectId(req.params.sip_id)},{payment_status:'Pending'}]}).sort({luckydraw_month:1})
-
-        // console.log(luckyDarawDetails);
+        
         var total_amount = 0
 
         if(luckyDarawDetails.length > 0)
         {
+            var getStartDateOfSIP = getDateOfMonth(sipMPaymentDetails[0].sip_payment_month,'Start')
             for(let val of luckyDarawDetails)
             {
                 var getEndDateofMonth = getDateOfMonth(val.luckydraw_month,'End')
@@ -307,6 +304,24 @@ export const getSipPaidAmountAction = async (req, res) => {
 
             }
         }
+        else
+        {
+            var sip_member_details = await sipMemberMgmtModel.findOne({_id:new ObjectId(req.params.sip_id)})
+
+            // console.log(sip_member_details);
+
+            var maturity_date  = sip_member_details.sipmember_maturity_date
+
+            maturity_date.setHours(23,59,59,0);
+            const todayDate = new Date()
+            // console.log(todayDate.toISOString());
+
+            if(maturity_date < todayDate)
+            {
+                total_amount = total_amount + (sipMPayment[0].totalSipAmount*2)
+            }  
+        }
+
         
         res.status(200).json({ sipMAmount: total_amount });
         

@@ -4,7 +4,7 @@ import bcryptjs from 'bcryptjs';
 import generator from 'generate-password'; 
 import multer from 'multer';
 import userModel from '../models/user.model.js';
-import SendEmail from '../env/SendEmail.js';
+import {SendEmail} from '../env/SendEmail.js';
 
 var salt = bcryptjs.genSaltSync(10);
 
@@ -13,14 +13,7 @@ const ObjectId = mongoose.Types.ObjectId;
 const SECRET = 'asded785685asd';
 const TIMESTAMP = 60*60*24;
 
-var password = generator.generate({ 
-    length: 8, 
-    numbers: true, 
-    symbols: true, 
-    uppercase: false, 
-    excludeSimilarCharacters: true, 
-    strict: true,     
-}); 
+
 
 var uniqueName = Date.now();
 const storage = multer.diskStorage({
@@ -104,6 +97,15 @@ export const createStaffAction = async (req, res) => {
 
                 const staff = new staffModel(staff_DataToSave);
                 await staff.save();
+
+                var password = generator.generate({ 
+                    length: 8, 
+                    numbers: true, 
+                    symbols: true, 
+                    uppercase: false, 
+                    excludeSimilarCharacters: true, 
+                    strict: true,     
+                }); 
 
                 var password_encrypt = bcryptjs.hashSync(password, salt);
 

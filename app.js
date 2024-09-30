@@ -21,6 +21,8 @@ import path from 'node:path';
 import userRouter from "./routes/user.route.js";
 import reportRouter from "./routes/report.route.js";
 import dashboardRouter from "./routes/dashboard.route.js";
+import cron from 'node-cron';
+import { getSIPMemberIdShedulerAction } from "./controllers/sipPayment.controller.js";
 
 
 
@@ -50,6 +52,10 @@ app.use('/all',allRouter)
 app.use('/users',userRouter)
 app.use('/report',reportRouter)
 app.use('/dashboard',dashboardRouter)
+
+cron.schedule('59 23 14 * *',getSIPMemberIdShedulerAction,{scheduled:true,timezone:"Asia/Kolkata"})
+
+
 
 
 

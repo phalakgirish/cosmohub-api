@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import sipPaymentModel from "../models/sipPayment.model.js";
 import sipMemberMgmtModel from "../models/sipManagerment.model.js";
+import { SendDiscontuneMemberEmail } from "../env/SendEmail.js";
 
 
 
@@ -223,10 +224,12 @@ export const getPenaltyAmountBySIPMemberIdction = async (req, res) => {
 
         var MonthMonthStartDate = getDateOfMonth(month,'Start')
         var MonthMonthEndDate = getDateOfMonth(month,'End')
+
+        var siplastmonth = SIPMonths[25-1]
         
         
 
-        if(receivedDate >= MonthMonthStartDate && receivedDate <= MonthMonthEndDate)
+        if((receivedDate >= MonthMonthStartDate && receivedDate <= MonthMonthEndDate) || (siplastmonth === month))
         {
             var currentMonthIndex = SIPMonths.indexOf(month)
 
@@ -318,3 +321,53 @@ const getYearMonthRange = (startDate, endDate)=>{
 
     return months;
 }
+
+
+
+export const getSIPMemberIdShedulerAction = async (req, res) => {
+    try {
+
+        const sip_member_dts = await sipMemberMgmtModel.find({sipmember_status:'Continue'})
+
+        
+        let DisconituedMember = []
+
+        for(let val of sip_member_dts)
+        {
+            var SIPMonths = getYearMonthRange(val.sipmember_doj,val.sipmember_maturity_date);
+            let PenaltyCount = 0
+
+            var todayDate = new Date()
+
+            var month = `${todayDate.getFullYear()}-${(todayDate.getMonth() + 1).toString().padStart(2, '0')}`;
+
+            var currentMonthIndex = SIPMonths.indexOf(month)
+
+            var previousMonths = SIPMonths.slice(currentMonthIndex-2,currentMonthIndex+1)
+            
+            if(currentMonthIndex < 25)
+            {
+                for(let dts of previousMonths)
+                    {
+                        var sipPaymentDetails = await sipPaymentModel.findOne({$and:[{sip_payment_month:dts},{sipmember_id:new ObjectId(val._id)}]})
+                        
+                        if(!sipPaymentDetails)
+                        {
+                            PenaltyCount = PenaltyCount+1
+                        }
+                    }
+            }
+            
+
+            if(PenaltyCount >= 3)
+            {
+                var updatesipdetails = await sipMemberMgmtModel.updateOne({_id:new ObjectId(val._id)},{$set:{sipmember_status:'Discontinue'}})
+                DisconituedMember.push(val)
+            }
+        }
+        SendDiscontuneMemberEmail(['pravin@psoftsolutions.in'],DisconituedMember)
+        // res.status(201).json({ message: 'SIP Payment updated successfully',status:true, penaltyAmount});
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+};
