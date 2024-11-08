@@ -57,7 +57,7 @@ export const getBranchAction = async (req, res) => {
         const pageNumber = req.query.page || 1;
         const limit = 10;
         const skip = (pageNumber - 1) * limit;
-        var branch = await branchModel.find().skip(skip).limit(limit)
+        var branch = await branchModel.find() //.skip(skip).limit(limit)
         if (!branch) {
             return res.status(404).json({ message: 'Branch not found',status:false });
         }

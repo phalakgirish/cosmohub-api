@@ -64,7 +64,7 @@ export const getDesignationAction = async (req, res) => {
                         designation_status:1
                     }
                 }
-            ]).skip(skip).limit(limit)
+            ]) //.skip(skip).limit(limit)
         }
         else
         {

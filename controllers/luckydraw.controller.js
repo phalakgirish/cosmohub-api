@@ -65,7 +65,7 @@ export const getLuckyDrawAction = async (req, res) => {
                     payment_status:1
                 }
             }
-        ]).skip(skip).limit(limit)
+        ]) //.skip(skip).limit(limit)
         
         if (!luckyDraw) {
             return res.status(404).json({ message: 'Record not found',status:false });
