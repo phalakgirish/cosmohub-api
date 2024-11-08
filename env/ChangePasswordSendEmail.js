@@ -5,14 +5,14 @@ export default async function changePasswordSendEmail(staff_email_id,password) {
         service:'gmail',
         auth: {
         // TODO: replace `user` and `pass` values from <https://forwardemail.net>
-        user: "pravinkarande2483@gmail.com",
-        pass: "zvorjuoqhfmubwbp",
+        user: "generalmanagercosmohub@gmail.com",
+        pass: "jcqwotmedjnwvfgw",
         },
     });
 
     // send mail with defined transport object
     const info = await transporter.sendMail({
-        from: '"CosmoHub Group Of Business" <pravinkarande2483@gmail.com>', // sender address
+        from: '"CosmoHub Group Of Business" <generalmanagercosmohub@gmail.com>', // sender address
         to: staff_email_id, // list of receivers
         subject: "Change Password", // Subject line
         text: "Hello world?", // plain text body

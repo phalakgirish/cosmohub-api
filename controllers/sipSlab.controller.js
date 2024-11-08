@@ -66,7 +66,7 @@ export const getSipSlabAction = async (req, res) => {
         const pageNumber = req.query.page || 1;
         const limit = 10;
         const skip = (pageNumber - 1) * limit;
-        var sip_slab = await sipSlabModel.find().skip(skip).limit(limit)
+        var sip_slab = await sipSlabModel.find() //.skip(skip).limit(limit)
         if (!sip_slab) {
             return res.status(404).json({ message: 'SIP Slab not found',status:false });
         }

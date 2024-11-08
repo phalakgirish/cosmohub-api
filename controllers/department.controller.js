@@ -64,7 +64,7 @@ export const getDepartmentAction = async (req, res) => {
                             department_status:1
                         }
                     }
-            ]).skip(skip).limit(limit);
+            ]) //.skip(skip).limit(limit);
         }
         else
         {
@@ -88,7 +88,7 @@ export const getDepartmentAction = async (req, res) => {
                 }
 
                 
-            ]).skip(skip).limit(limit);
+            ]) //.skip(skip).limit(limit);
         }
         if (!department) {
             return res.status(404).json({ message: 'Department not found',status:false });

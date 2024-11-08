@@ -163,7 +163,7 @@ export const getSipMaturityAction = async (req, res) => {
                     sip_payment_paidDate:1
                 }
             }
-        ]).skip(skip).limit(limit)
+        ]) //.skip(skip).limit(limit)
         if (!sipMPayment) {
             return res.status(404).json({ message: 'Payment not found',status:false });
         }

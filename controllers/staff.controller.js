@@ -208,7 +208,7 @@ export const getStaffsAction = async (req, res) => {
               }
         ])
         
-        .skip(skip).limit(limit)
+        //.skip(skip).limit(limit)
 
 
         if (!staff) {

@@ -148,7 +148,7 @@ export const getSipPaymentAction = async (req, res) => {
                     sip_payment_receivedDate:1
                 }
             }
-        ]).skip(skip).limit(limit)
+        ]) //.skip(skip).limit(limit)
         // console.log(sipPayment);
         
         if (!sipPayment) {

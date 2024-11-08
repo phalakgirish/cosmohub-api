@@ -124,11 +124,11 @@ export const getClientAction = async (req, res) => {
         
         if(branch_id == '0')
         {
-            client = await clientModel.find().skip(skip).limit(limit)
+            client = await clientModel.find() //.skip(skip).limit(limit)
         }
         else
         {
-            client = await clientModel.find({branch_id:new ObjectId(branch_id)}).skip(skip).limit(limit)
+            client = await clientModel.find({branch_id:new ObjectId(branch_id)}) //.skip(skip).limit(limit)
 
         }
         if (!client) {

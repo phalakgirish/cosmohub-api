@@ -147,7 +147,7 @@ export const getSipMembersAction = async (req, res) => {
               }
         ])
         
-        .skip(skip)//.limit(limit);
+        //.skip(skip)//.limit(limit);
         
         if (!sip_member) {
             return res.status(404).json({ message: 'SIP Members not found',status:false });
