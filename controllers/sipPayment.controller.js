@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import sipPaymentModel from "../models/sipPayment.model.js";
 import sipMemberMgmtModel from "../models/sipManagerment.model.js";
 import { SendDiscontuneMemberEmail } from "../env/SendEmail.js";
+import cilentWalletModel from "../models/clientWallet.model.js";
 
 
 
@@ -55,6 +56,25 @@ export const createSipPaymentAction = async (req, res) => {
         }
         const sipPayment = new sipPaymentModel(DataToSave);
         await sipPayment.save();
+
+        if(sip_payment_mode == 'Wallet')
+        {
+            const client_Id = await sipMemberMgmtModel.findOne({_id:new ObjectId(sipmember_id)})
+            const clientWalletBalance = await cilentWalletModel.findOne({client_id:new ObjectId(client_Id.client_id)}).sort({_id: -1}).limit(1)
+
+            var datatoWalletSave = {
+                client_id: client_Id.client_id,
+                wallet_trans_date: new Date(),
+                wallet_trans_desc: `SIP Payment for Receipt: ${NewReceipt_No}`,
+                wallet_credit: 0,
+                wallet_debit: (sip_amount+sip_penalty_amount),
+                wallet_balance: (clientWalletBalance.wallet_balance - (sip_amount+sip_penalty_amount)),
+            }
+
+
+            var client_wallet = new cilentWalletModel(datatoWalletSave);
+            client_wallet.save();
+        }
 
         var sipPaymentReciept = await sipPaymentModel.aggregate([
             {$match:{_id:new ObjectId(sipPayment._id)}},
@@ -322,8 +342,6 @@ const getYearMonthRange = (startDate, endDate)=>{
     return months;
 }
 
-
-
 export const getSIPMemberIdShedulerAction = async (req, res) => {
     try {
 
@@ -371,3 +389,22 @@ export const getSIPMemberIdShedulerAction = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 };
+
+export const getClientWalletBalance = async (req,res) =>{
+
+    try {
+
+        const client_Id = await sipMemberMgmtModel.findOne({_id:new ObjectId(req.params.member_id)})
+        const clientWalletBalance = await cilentWalletModel.findOne({client_id:new ObjectId(client_Id.client_id)}).sort({_id: -1}).limit(1)
+
+        
+        if (!clientWalletBalance) {
+            return res.status(404).json({ message: 'Entry not found',status:false });
+        }
+        // console.log(staff1);
+        res.status(200).json({ balance:clientWalletBalance.wallet_balance });
+        
+    } catch (error) {
+        res.status(400).json({ error: error.message });
+    }
+}

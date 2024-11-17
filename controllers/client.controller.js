@@ -33,9 +33,9 @@ export const createClientAction = async (req, res) => {
                 console.log(err);
               } 
               else{
-                // console.log(req.body);
+                console.log(req.body);
                 // var personalDetails = req.body.personalDetails
-                const{client_name, client_dob, client_mobile_number, client_emailId, client_gender, client_pancard, client_addharcard,client_postaladdress,client_landmark,client_status,branch_id} = req.body;
+                const{client_name, client_dob, client_mobile_number, client_emailId, client_gender, client_pancard, client_addharcard,client_postaladdress,client_landmark,sip_refered_by_clientId,sip_reference_level,client_status,branch_id} = req.body;
 
                 var clientDetails = await clientModel.find({branch_id:new ObjectId(branch_id)});
 
@@ -69,6 +69,7 @@ export const createClientAction = async (req, res) => {
                     NewClient_Id = Branchcode+'-'+ActualId.toString()
                 }
                 
+                
                 var client_DataToSave = {
                     client_id: NewClient_Id,
                     client_name: client_name,
@@ -80,6 +81,8 @@ export const createClientAction = async (req, res) => {
                     client_addharcard: req.files.client_addharcard[0].filename,
                     client_postaladdress: client_postaladdress,
                     client_landmark: client_landmark,
+                    sip_refered_by_clientId:(sip_refered_by_clientId == 'null' || sip_refered_by_clientId == '')?null:sip_refered_by_clientId,
+                    sip_reference_level:Number(sip_reference_level),
                     client_status:client_status,
                     branch_id:branch_id
                 }
@@ -165,8 +168,9 @@ export const UpdateClientAction = async (req, res) => {
                 console.log(err);
               } 
               else{
-
-            const{client_id, client_name, client_dob, client_mobile_number, client_emailId, client_gender, client_pancard, client_addharcard,client_postaladdress,client_landmark,client_status,branch_id} = req.body; 
+                // console.log(req.body);
+                
+            const{client_id, client_name, client_dob, client_mobile_number, client_emailId, client_gender, client_pancard, client_addharcard,client_postaladdress,sip_refered_by_clientId,sip_reference_level,client_landmark,client_status,branch_id} = req.body; 
 
             var client_record = await clientModel.find({_id:new ObjectId(req.params.client_id)});
 
@@ -183,6 +187,8 @@ export const UpdateClientAction = async (req, res) => {
                 clientAddharCard = req.files.client_addharcard[0].filename
             }
 
+
+
             var DataToSave = {
                 client_id: client_id,
                 client_name: client_name,
@@ -194,6 +200,8 @@ export const UpdateClientAction = async (req, res) => {
                 client_addharcard: clientAddharCard,
                 client_postaladdress: client_postaladdress,
                 client_landmark: client_landmark,
+                sip_refered_by_clientId:(sip_refered_by_clientId == 'null' || sip_refered_by_clientId == '')?null:sip_refered_by_clientId,
+                sip_reference_level:Number(sip_reference_level),
                 client_status:client_status,
                 branch_id:branch_id
             }

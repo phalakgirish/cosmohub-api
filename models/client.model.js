@@ -13,6 +13,8 @@ const clientSchema = new Schema({
   client_addharcard: { type: String, required:true },
   client_postaladdress: { type: String, required:true },
   client_landmark: { type: String, required:true },
+  sip_refered_by_clientId: { type: mongoose.Schema.ObjectId, default: null },
+  sip_reference_level: { type: Number },
   client_status: { type: Boolean, required:true },
   branch_id:{ type: mongoose.Schema.ObjectId, required:true }
 });
