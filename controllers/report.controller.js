@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import branchModel from "../models/branch.model.js";
 import sipPaymentModel from "../models/sipPayment.model.js";
 import sipMemberMgmtModel from "../models/sipManagerment.model.js";
+import luckyDrawModel from "../models/luckyDraw.model.js";
 
 const ObjectId = mongoose.Types.ObjectId;
 
@@ -292,6 +293,14 @@ export const getLuckyDrawMemberDetailsAction = async (req,res)=>{
                 }
             },
             {
+                $lookup:{
+                    from: "sip_categories",
+                    localField: "sipmember_sip_category",
+                    foreignField: "_id",
+                    as: "Sip_Category",
+                }
+            },
+            {
                 $unwind: "$Sip_Payments"
             },
             {
@@ -301,14 +310,20 @@ export const getLuckyDrawMemberDetailsAction = async (req,res)=>{
                 $unwind: "$branch"
             },
             {
+                $unwind: "$Sip_Category"
+            },
+            
+            {
                 $group:{
                     _id:{
                         _id:"$_id",
                         sipmember_id: "$sipmember_id",
                         client_id:"$clients.client_id",
+                        client_city:"$clients.client_city",
                         sipmember_name:"$sipmember_name",
                         sipmember_doj:"$sipmember_doj",
                         sipmember_maturity_date:"$sipmember_maturity_date",
+                        sip_member_category:"$Sip_Category.sipcategory_name",
                         branch:"$branch.branch_name"
                     },
                     totalSIPAmount:{$sum:"$Sip_Payments.sip_amount"},
@@ -321,9 +336,11 @@ export const getLuckyDrawMemberDetailsAction = async (req,res)=>{
                     _id:"$_id._id",
                     Sip_id:"$_id.sipmember_id",
                     client_id:"$_id.client_id",
+                    client_city:"$_id.client_city",
                     sipmember_name:"$_id.sipmember_name",
                     sipmember_doj:"$_id.sipmember_doj",
                     sipmember_maturity_date:"$_id.sipmember_maturity_date",
+                    sip_member_category:"$_id.sip_member_category",
                     branch:"$_id.branch",
                     totalSIPAmount:1,
                     totalSIPPenaltyAmount:1,
@@ -341,19 +358,27 @@ export const getLuckyDrawMemberDetailsAction = async (req,res)=>{
         {
             const sipPaymentDetails = await sipPaymentModel.find({sipmember_id:new ObjectId(val._id)})
 
+            const luckdarwDetails = await luckyDrawModel.find({spimember_id:new ObjectId(val._id)})
+
+            const previousrank = luckdarwDetails.map((val)=> getOrdinal(parseInt(val.luckydraw_rank))).join(', ')
+
             let SipMonthPaymnt = sipPaymentDetails.filter((item)=> item.sip_payment_month == month)
 
             if(SipMonthPaymnt.length > 0)
             {
                 val['sip_amount'] = SipMonthPaymnt[0].sip_amount; 
                 val['sip_payment_mode'] = SipMonthPaymnt[0].sip_payment_mode;
+                val['sip_payment_month'] = formatMonthDate(SipMonthPaymnt[0].sip_payment_month);
+                val['Sip_previous_rank'] = previousrank
                 sipPayment.push(val)
                 continue;
             }
             else if(val.totalCount >= 25)
             {
                 val['sip_amount'] = sipMemberDetails[sipMemberDetails.length -1].sip_amount;
-                val['sip_payment_mode'] =  sipMemberDetails[sipMemberDetails.length -1].sip_payment_mode;   
+                val['sip_payment_mode'] =  sipMemberDetails[sipMemberDetails.length -1].sip_payment_mode;
+                val['sip_payment_month'] = formatMonthDate(SipMonthPaymnt[sipMemberDetails.length -1].sip_payment_month);  
+                val['Sip_previous_rank'] = previousrank 
                 sipPayment.push(val)
                 continue;
             }
@@ -371,4 +396,23 @@ export const getLuckyDrawMemberDetailsAction = async (req,res)=>{
         res.status(400).json({ error: error.message });
     }
 }
+
+const formatMonthDate = (dateString)=> {
+    const [year, month] = dateString.split('-');
+    
+    // Create a date object using the year and month
+    const date = new Date(`${year}-${month}-01`);
+    
+    // Format the month to get the full month name
+    const options = { month: "long" };
+    const monthName = new Intl.DateTimeFormat('en-US',{ month: 'long' }).format(date);
+    
+    return `${monthName}-${year}`;
+}
+
+const getOrdinal = (n)=> {
+    const s = ["th", "st", "nd", "rd"];
+    const v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  }
 

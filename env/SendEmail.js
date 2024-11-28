@@ -45,14 +45,14 @@ export  async function SendDiscontuneMemberEmail (staff_email_id,memberlist) {
         service:'gmail',
         auth: {
         // TODO: replace `user` and `pass` values from <https://forwardemail.net>
-        user: "pravinkarande2483@gmail.com",
-        pass: "zvorjuoqhfmubwbp",
+        user: "generalmanagercosmohub@gmail.com",
+        pass: "jcqwotmedjnwvfgw",
         },
     });
 
     // send mail with defined transport object
     const info = await transporter.sendMail({
-        from: '"CosmoHub Group Of Business" <pravinkarande2483@gmail.com>', // sender address
+        from: '"CosmoHub Group Of Business" <generalmanagercosmohub@gmail.com>', // sender address
         to: staff_email_id, // list of receivers
         subject: "Discountined SIP Member List", // Subject line
         text: "Hello world?", // plain text body
@@ -101,6 +101,36 @@ const formatDate = (date) => {
       month: '2-digit',
       year: 'numeric',
     });
+}
+
+export default async function SendVerifyEmail(emailid, otp) {
+    // console.log(emailid , otp);
+    
+    const transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: "generalmanagercosmohub@gmail.com",
+            pass: "jcqwotmedjnwvfgw",
+        },
+    });
+
+    const info = await transporter.sendMail({
+        from: '"CosmoHub Group Of Business" <generalmanagercosmohub@gmail.com>',
+        to: emailid,
+        subject: "Verify Email OTP Generated",
+        text: `Your OTP is ${otp}`,
+        html: `
+            <div>
+                <p>Hi User,</p>
+                <p style="margin-bottom:10px;">Please Find below <b>Generated OTP</b> for email verification.</p>
+                <p style="font-size:50px;margin:5px;font-family:Arial"><b>${otp}</b></p>
+                <p ><b>Note:</b> This is a system generated email.<p>
+                <p>Thanks & Regards,<br />CosmoHub Team</p>
+            </div>
+        `,
+    });
+
+    console.log("Message sent: %s", info.messageId);
 }
 
 

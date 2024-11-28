@@ -68,7 +68,7 @@ export const getDesignationAction = async (req, res) => {
         }
         else
         {
-            designation = await designationModel.find({branch_id:new ObjectId(branch_id)}).skip(skip).limit(limit)
+            designation = await designationModel.find({branch_id:new ObjectId(branch_id)}) //.skip(skip).limit(limit)
         }
         if (!designation) {
             return res.status(404).json({ message: 'Designation not found',status:false });

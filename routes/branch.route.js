@@ -12,5 +12,9 @@ branchRouter.get('/all/:all',Auth,getAllBranchAction);
 
 // branchRouter.get('/:branch_id',Auth,deleteBranchAction); //search
 
+// db.branches.updateMany({},{$set:{branch_country:'India'}})
+
+// db.branches.updateMany({}, [{$set: {branch_mobile_number: { $concat: ["+91-","$branch_mobile_number"] }}}])
+
 
 export default branchRouter;

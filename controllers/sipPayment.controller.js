@@ -102,6 +102,8 @@ export const createSipPaymentAction = async (req, res) => {
                     sipmember_name:1,
                     sip_payment_month: 1,
                     sip_amount: 1,
+                    sip_penalty_month: 1,
+                    sip_penalty_amount: 1,
                     sip_payment_mode:1,
                     sip_payment_refno:1,
                     sip_payment_receivedBy:{ $arrayElemAt: ["$receivedBy.staff_name", 0] },
@@ -407,4 +409,24 @@ export const getClientWalletBalance = async (req,res) =>{
     } catch (error) {
         res.status(400).json({ error: error.message });
     }
+}
+
+export const getSipPaymentPreeventcheck = async (req,res)=>{
+
+    try 
+    {   
+        // console.log(req.query);
+        
+        const sipmember_id = req.query.sipmember_id
+        const sipmonth = req.query.sip_month
+
+        var sipPaymentDetails = await sipPaymentModel.find({$and:[{sipmember_id:new ObjectId(sipmember_id)},{sip_payment_month:sipmonth}]})
+
+        res.status(200).json({msg:'Preevent check called',status:true, sipPaymentDetails:sipPaymentDetails });
+    }
+    catch(error)
+    {
+        res.status(400).json({ error: error.message });
+    }
+
 }

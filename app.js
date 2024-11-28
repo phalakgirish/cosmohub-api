@@ -25,6 +25,7 @@ import cron from 'node-cron';
 import { getSIPMemberIdShedulerAction } from "./controllers/sipPayment.controller.js";
 import referenceLevelRouter from "./routes/referenceLevel.route.js";
 import referenceSchemePayRouter from "./routes/referenceSchemePay.route.js";
+import sipCategoryRouter from "./routes/sipCategory.route.js";
 
 
 
@@ -56,6 +57,8 @@ app.use('/report',reportRouter)
 app.use('/dashboard',dashboardRouter)
 app.use('/referencelevel',referenceLevelRouter)
 app.use('/referencesch',referenceSchemePayRouter)
+app.use('/sipcategory',sipCategoryRouter)
+
 
 
 

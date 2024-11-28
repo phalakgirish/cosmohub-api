@@ -6,6 +6,8 @@ import clientModel from "../models/client.model.js";
 import userModel from "../models/user.model.js";
 import sipMemberMgmtModel from "../models/sipManagerment.model.js";
 import staffModel from "../models/staff.model.js";
+import countryModel from "../models/country.model.js";
+import stateModel from "../models/state.model.js";
 
 const ObjectId = mongoose.Types.ObjectId;
 
@@ -65,7 +67,8 @@ export const getClientsByBranchIdAction = async (req, res) => {
                     {$project:{
                         _id:1,
                         client_id:1,
-                        client_name:1
+                        client_name:1,
+                        client_mobile_number:1
                     }}
                   ])
             }
@@ -76,7 +79,8 @@ export const getClientsByBranchIdAction = async (req, res) => {
                     {$project:{
                         _id:1,
                         client_id:1,
-                        client_name:1
+                        client_name:1,
+                        client_mobile_number:1
                     }}
                   ])
             }
@@ -288,3 +292,40 @@ export const getSipMemberByClientIdReportAction = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 };
+
+export const getCountriesAction = async (req,res) => {
+    try
+    {
+        var country = await countryModel.find();
+
+        if(!country)
+        {
+            res.status(200).json({msg:'No country found',country:country,status:false});
+        }
+
+        res.status(200).json({msg:'Country Found',country:country,status:true})
+    }
+    catch(error)
+    {
+        res.status(400).json({error:error.message, status:false})
+    }
+}
+
+export const getStatesByCountryAction = async (req,res) => {
+    try
+    {
+        var country_name = req.params.country
+        var states = await stateModel.find({state_country:country_name});
+
+        if(!states)
+        {
+            res.status(200).json({msg:'No state found',states:states,status:false});
+        }
+
+        res.status(200).json({msg:'States Found',states:states,status:true})
+    }
+    catch(error)
+    {
+        res.status(400).json({error:error.message, status:false})
+    }
+}

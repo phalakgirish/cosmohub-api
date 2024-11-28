@@ -4,7 +4,7 @@ import bcryptjs from 'bcryptjs';
 import generator from 'generate-password'; 
 import multer from 'multer';
 import userModel from '../models/user.model.js';
-import {SendEmail} from '../env/SendEmail.js';
+import SendVerifyEmail, {SendEmail} from '../env/SendEmail.js';
 
 var salt = bcryptjs.genSaltSync(10);
 
@@ -46,7 +46,7 @@ export const createStaffAction = async (req, res) => {
                 console.log(err);
               } 
               else{
-                const{staff_name,staff_dob,staff_mobile_number,staff_emailId,staff_gender,staff_pancard,staff_addharcard,staff_role_type,staff_department,staff_designation,staff_branch,staff_doj} = req.body;
+                const{staff_name,staff_dob,staff_mobile_number,staff_emailId,staff_gender,staff_pancard,staff_addharcard,staff_role_type,staff_department,staff_designation,staff_branch,staff_doj,staff_country,staff_state,staff_isemailVerified} = req.body;
 
                 
                 var staffDetails = await staffModel.find();
@@ -83,6 +83,7 @@ export const createStaffAction = async (req, res) => {
                     staff_dob: new Date(staff_dob),
                     staff_mobile_number: staff_mobile_number,
                     staff_emailId: staff_emailId,
+                    staff_isemailVerified: staff_isemailVerified,
                     staff_gender: staff_gender,
                     staff_pancard: req.files.staff_pancard[0].filename,
                     staff_addharcard: req.files.staff_addharcard[0].filename,
@@ -90,7 +91,9 @@ export const createStaffAction = async (req, res) => {
                     staff_designation: staff_designation,
                     staff_branch: staff_branch,
                     staff_doj: new Date(staff_doj),
-                    staff_role_type: staff_role_type
+                    staff_role_type: staff_role_type,
+                    staff_country:staff_country,
+                    staff_state:staff_state
                 }
                 // console.log(staff_DataToSave);
                 
@@ -122,7 +125,11 @@ export const createStaffAction = async (req, res) => {
                 await uses_data.save();
 
                 var usesCreatedData = {staff_email_id:staff_emailId,password:password}
-                SendEmail(usesCreatedData.staff_email_id,usesCreatedData.password)
+                if(staff_isemailVerified)
+                {
+                    SendEmail(usesCreatedData.staff_email_id,usesCreatedData.password)
+                }
+
                 res.status(201).json({ message: 'Staff added successfully',status:true ,usesCreatedData:usesCreatedData});
             }
         });
@@ -253,7 +260,7 @@ export const UpdateStaffAction = async (req, res) => {
                 console.log(err);
               } 
               else{
-                const{staff_id,staff_name,staff_dob,staff_mobile_number,staff_emailId,staff_gender,staff_pancard,staff_addharcard,staff_role_type,staff_department,staff_designation,staff_branch,staff_doj} = req.body;
+                const{staff_id,staff_name,staff_dob,staff_mobile_number,staff_emailId,staff_gender,staff_pancard,staff_addharcard,staff_role_type,staff_department,staff_designation,staff_branch,staff_doj,staff_country,staff_state,staff_isemailVerified} = req.body;
 
                 const staff_record = await staffModel.find({_id:req.params.staff_id});
                 
@@ -276,6 +283,7 @@ export const UpdateStaffAction = async (req, res) => {
                     staff_dob: new Date(staff_dob),
                     staff_mobile_number: staff_mobile_number,
                     staff_emailId: staff_emailId,
+                    staff_isemailVerified: staff_isemailVerified,
                     staff_gender: staff_gender,
                     staff_pancard: staffPancard,
                     staff_addharcard: staffAddharCard,
@@ -283,7 +291,9 @@ export const UpdateStaffAction = async (req, res) => {
                     staff_designation: staff_designation,
                     staff_branch: staff_branch,
                     staff_doj: new Date(staff_doj),
-                    staff_role_type: staff_role_type
+                    staff_role_type: staff_role_type,
+                    staff_country:staff_country,
+                    staff_state:staff_state
                 }
                 
 
@@ -299,3 +309,20 @@ export const UpdateStaffAction = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 };
+
+
+export const VerifyEmailAction = async (req,res) => {
+    try
+    {
+        const emailId = req.params.emailid
+        const otp = Math.floor(1000 + Math.random() * 9000);
+
+        await SendVerifyEmail(emailId, otp);
+
+        res.status(200).send({ msg: "OTP generated successfully.", status: true, otp: otp });
+    }
+    catch(error)
+    {
+        res.status(400).json({error:error.message,status:false});
+    }
+}

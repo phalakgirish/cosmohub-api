@@ -42,6 +42,7 @@ export const createAllUsersByBranchIdAction = async (req,res)=>{
                     user_emailId: 1,
                     user_role_type: 1,
                     staff_name: { $arrayElemAt: ["$Staff.staff_name", 0] },
+                    staff_isemailVerified: { $arrayElemAt: ["$Staff.staff_isemailVerified", 0]},
                     user_branch: { $arrayElemAt: ["$users_branch.branch_name", 0] },
                     user_status: 1
                 }

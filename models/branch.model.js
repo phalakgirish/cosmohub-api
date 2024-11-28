@@ -8,6 +8,7 @@ const branchSchema = new Schema({
     branch_contact_person: { type: String, required: true },
     branch_mobile_number: { type: String, required: true },
     branch_emailId: { type: String, required: true },
+    branch_country: { type: String, required: true },
     branch_area: { type: String, required: true },
     branch_city: { type: String, required: true },
     branch_district: { type: String, required: true },

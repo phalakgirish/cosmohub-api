@@ -16,8 +16,11 @@ const sipMemberMgmtSchema = new Schema({
   sipmember_nominee_age: { type: Number },
   sipmember_nominee_relation: { type: String },
   sipmember_nominee_mobile: { type: String },
-  sipmember_nominee_pancard: { type: String },
-  sipmember_nominee_addharcard: { type: String },
+  sipmember_nominee_otherdocs: { type: String , default:null},
+  sipmember_nominee_addharcard: { type: String ,default:null},
+  sipmember_nominee_aadhaarno: {type: String},
+  sipmember_sip_category: { type: mongoose.Schema.ObjectId, required:true },
+  sipmember_remarks: { type: String, default:null},
   sipmember_status: {type: String },
   branch_id:{ type: mongoose.Schema.ObjectId, required:true }
 });

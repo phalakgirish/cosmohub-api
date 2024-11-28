@@ -7,6 +7,7 @@ const staffSchema = new Schema({
   staff_name: { type: String, required: true },
   staff_dob: { type: Date, required: true },
   staff_mobile_number: { type: String, required: true },
+  staff_isemailVerified: { type: Boolean},
   staff_emailId: { type: String, required: true },
   staff_gender: { type: String, required:true },
   staff_pancard: { type: String, required:true },
@@ -16,6 +17,8 @@ const staffSchema = new Schema({
   staff_branch: { type: mongoose.Schema.ObjectId, required:true },
   staff_doj: { type: Date, required: true },
   staff_role_type: { type: String, required: true },
+  staff_country: { type: String, required: true },
+  staff_state: { type: String, required: true },
 });
 
 const staffModel = mongoose.model('staffs', staffSchema);
