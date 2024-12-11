@@ -8,22 +8,61 @@ const ObjectId = mongoose.Types.ObjectId;
 
 export const getMonthWisePaymentAction = async (req,res)=>{
     try{
-
+        
         const branchId = req.query.branchId;
         const month = req.query.month
+        const sip_category = req.query.sipcategory;
+        const start_Date = req.query.startDate;
+        const end_Date = req.query.endDate;
 
-        var query = { sip_payment_month: month };
+        var query = {}
+        var filter_field = []
+
+        if(month != '')
+        {
+            filter_field.push({sip_payment_month:month})
+        }
+        if(branchId != '0')
+        {
+            filter_field.push({branch_id:new ObjectId(branchId)})
+        }
+
+        if(start_Date != '' && end_Date != '')
+        {
+            var startDate = new Date(start_Date);
+
+            var endDate = new Date(end_Date);
+            
+            filter_field.push({sip_payment_receivedDate:{$gte:startDate,$lte:getDateOfMonth(endDate,'End')}})   
+        }
+        
+
+        if(filter_field.length >1)
+        {
+            query = {$and:filter_field}
+        }
+        else
+        {
+            for(let val of filter_field)
+            {
+                query = val
+            }
+            
+        }
+        
+        
+
+        
         let sipPayment
         if(branchId == "0")
         {
             sipPayment = await sipPaymentModel.aggregate([
-                {$match:query},
                 {
                     $lookup:{
                         from: "sip_member_mgmts",
                         localField: "sipmember_id",
                         foreignField: "_id",
-                        as: "Sip_id",
+                        as: "sip_id",
                     }
                 },
                 {
@@ -43,10 +82,20 @@ export const getMonthWisePaymentAction = async (req,res)=>{
                     }
                 },
                 {
+                    $lookup:{
+                        from:'sip_categories',
+                        localField:'sip_id.sipmember_sip_category',
+                        foreignField:'_id',
+                        as:'sipCategory'
+                    }
+                },
+
+                {$match:query},
+                {
                     $project:{
                         _id:1,
                         sippayment_receiptno:1,
-                        Sip_id:{ $arrayElemAt: ["$Sip_id.sipmember_id", 0] },
+                        Sip_id:{ $arrayElemAt: ["$sip_id.sipmember_id", 0] },
                         sipmember_name:1,
                         sip_payment_month: 1,
                         sip_amount: 1,
@@ -54,6 +103,8 @@ export const getMonthWisePaymentAction = async (req,res)=>{
                         sip_penalty_amount: 1,
                         sip_payment_mode: 1,
                         sip_payment_refno: 1,
+                        sip_category_id:{ $arrayElemAt: ["$sip_id.sipmember_sip_category", 0] },
+                        sipmember_sip_category:{ $arrayElemAt: ["$sipCategory.sipcategory_name", 0] },
                         sip_payment_receivedBy:{ $arrayElemAt: ["$receivedBy.staff_name", 0] },
                         sip_payment_receivedDate:1,
                         branch:{ $arrayElemAt: ["$branch.branch_name", 0] }
@@ -64,13 +115,12 @@ export const getMonthWisePaymentAction = async (req,res)=>{
         else
         {
             sipPayment = await sipPaymentModel.aggregate([
-                {$match:{$and:[query,{branchId:new ObjectId(branchId)}]}},
                 {
                     $lookup:{
                         from: "sip_member_mgmts",
                         localField: "sipmember_id",
                         foreignField: "_id",
-                        as: "Sip_id",
+                        as: "sip_id",
                     }
                 },
                 {
@@ -90,10 +140,19 @@ export const getMonthWisePaymentAction = async (req,res)=>{
                     }
                 },
                 {
+                    $lookup:{
+                        from:'sip_categories',
+                        localField:'sip_id.sipmember_sip_category',
+                        foreignField:'_id',
+                        as:'sipCategory'
+                    }
+                },
+                {$match:query},
+                {
                     $project:{
                         _id:1,
                         sippayment_receiptno:1,
-                        Sip_id:{ $arrayElemAt: ["$Sip_id.sipmember_id", 0] },
+                        Sip_id:{ $arrayElemAt: ["$sip_id.sipmember_id", 0] },
                         sipmember_name:1,
                         sip_payment_month: 1,
                         sip_amount: 1,
@@ -101,6 +160,8 @@ export const getMonthWisePaymentAction = async (req,res)=>{
                         sip_penalty_amount: 1,
                         sip_payment_mode: 1,
                         sip_payment_refno: 1,
+                        sip_category_id:{ $arrayElemAt: ["$sip_id.sipmember_sip_category", 0] },
+                        sipmember_sip_category:{ $arrayElemAt: ["$sipCategory.sipcategory_name", 0] },
                         sip_payment_receivedBy:{ $arrayElemAt: ["$receivedBy.staff_name", 0] },
                         sip_payment_receivedDate:1,
                         branch:{ $arrayElemAt: ["$branch.branch_name", 0] }
@@ -108,12 +169,20 @@ export const getMonthWisePaymentAction = async (req,res)=>{
                 }
             ])
         }
-               
+
+        if(sip_category != '' && sipPayment.length> 0 )
+        {
+            // filter_field.push({"firstCustomer.sipmember_sip_category":new ObjectId(sip_category)})
+            sipPayment  = sipPayment.filter((item)=> item.sip_category_id == sip_category);
+        }
+
+        // console.log(sipPayment);
+        
 
         if (!sipPayment) {
             return res.status(404).json({ message: 'Payment not found',status:false });
         }
-        // console.log(staff1);
+
         res.status(200).json({ sipPayment });
     }
     catch(error)
@@ -350,7 +419,7 @@ export const getLuckyDrawMemberDetailsAction = async (req,res)=>{
             {
                 $sort: { sipmember_id: 1 } // Sort by totalSIPAmount in descending order
             }
-        ])
+        ]).sort({_id:1})
         let sipPayment = []
         // console.log(sipMemberDetails);
 
@@ -414,5 +483,30 @@ const getOrdinal = (n)=> {
     const s = ["th", "st", "nd", "rd"];
     const v = n % 100;
     return n + (s[(v - 20) % 10] || s[v] || s[0]);
-  }
+}
+
+const getDateOfMonth = (monthstr,pos)=>{
+
+    // const DateStr = monthstr.split('T');
+    // const [year, month, date] = DateStr[0].split('-').map(Number);
+    // let MonthDate = new
+    // Start date of the month
+    // if(pos == 'Start')
+    // {
+    //     MonthDate = new Date(year, month - 1, 1);
+    // }
+    // else
+    // {
+    //     MonthDate = new Date(year, month, 0);
+    // }
+    
+    
+    
+    if(pos != 'Start')
+    {
+        monthstr.setHours(29,29,59,0)
+    }
+
+    return monthstr;
+}
 

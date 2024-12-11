@@ -24,7 +24,7 @@ export default sipManagementRouter;
 
 // db.sip_member_mgmts.updateMany({},{$set:{sipmember_remarks:''}})
 
-// db.sip_member_mgmts.updateMany({},{$set:{sipmember_nominee_aadhaarno:"123456789012",sipmember_sip_category:ObjectId(6744a27b099547e85b3aca2c)}}) -- Not Required
+// db.sip_member_mgmts.updateMany({},{$set:{sipmember_nominee_aadhaarno:"123456789012"}}) -- Not Required
 
 // db.sip_member_mgmts.updateMany({},{$rename: { "sipmember_nominee_pancard": "sipmember_nominee_otherdocs" }});
 

@@ -72,87 +72,7 @@ export const createSipMemberAction = async (req, res) => {
                     NewSip_Id = 'SIP-'+ActualId.toString()
                 }
 
-                var ClientDetails = await clientModel.findOne({_id:new ObjectId(client_id)})
-
-                var Client_Ref_sch_pay_Dts = await referenceSchemePaymentModel.findOne({client_id:new ObjectId(ClientDetails.sip_refered_by_clientId)})
-                // console.log(Client_Ref_sch_pay_Dts);
                 
-
-                if(ClientDetails.sip_refered_by_clientId != null)
-                {
-                    if(Client_Ref_sch_pay_Dts)
-                    {
-                        var client_reference_details = await sipReferenceModel.findOne({$and:[{sipmember_clientid:new ObjectId(client_id)},{sip_refered_by:new ObjectId(ClientDetails.sip_refered_by_clientId)}]})
-                    
-                        if(!client_reference_details)
-                        {
-                            var ReferedClient_id = []
-                            var UpdatedClientId = []
-                            var DataToSaveSIPReference = {
-                                sipmember_clientid: client_id,
-                                sip_refered_by: ClientDetails.sip_refered_by_clientId,
-                                sip_referedDate: new Date(),
-                                branch_id: branch_id
-                            }
-                            ReferedClient_id.push(ClientDetails.sip_refered_by_clientId)
-                            const sip_reference = new sipReferenceModel(DataToSaveSIPReference);
-                            await sip_reference.save();
-
-                            var client_refe_wallet = await ReferencePaymentWallet(client_id,ClientDetails.sip_refered_by_clientId,Client_Ref_sch_pay_Dts.reference_scheme_amount)
-                            
-
-                            ReferenceByLoop:
-                            for(let val of ReferedClient_id)
-                            {
-
-                                
-                                var updatedClient_index = UpdatedClientId.indexOf(val)
-
-                                
-                                if(updatedClient_index == -1)
-                                {
-                                    var samelevelCount = 0
-                                    var ReferedByClient_Id = await clientModel.findOne({_id: new ObjectId(val)})
-                                    
-                                    var client_referenceDetails = await sipReferenceModel.find({sip_refered_by: new ObjectId(val)})
-
-                                    for(let client of client_referenceDetails)
-                                    {
-                                        let client_dts = await clientModel.findOne({$and:[{_id: new ObjectId(client.sipmember_clientid)},{sip_reference_level:ReferedByClient_Id.sip_reference_level}]})
-
-                                        // console.log('114',client_dts);
-                                        
-                                        if(client_dts)
-                                        {
-                                            samelevelCount = samelevelCount + 1
-                                        }
-                                    }
-
-                                    if(samelevelCount  == 5)
-                                    {
-                                        if(ReferedByClient_Id.sip_reference_level <= 6)
-                                        {
-                                            var client_update_reference_level = await clientModel.updateOne(
-                                            { _id: new ObjectId(val) },
-                                                {
-                                                $set: {
-                                                    sip_reference_level: ReferedByClient_Id.sip_reference_level+1,
-                                                },
-                                                })
-                                            UpdatedClientId.push(val)
-                                                
-                                            if(ReferedByClient_Id.sip_refered_by_clientId != null)
-                                            {
-                                                ReferedClient_id.push(ReferedByClient_Id.sip_refered_by_clientId)
-                                            }
-                                        }   
-                                        continue ReferenceByLoop; 
-                                    }      
-                                }  
-                            }   
-                        }
-                    }   
-                }
 
                 var sip_DataToSave = {
                     sipmember_id: NewSip_Id,
@@ -458,54 +378,7 @@ export const createSipMemberReplicaByIdAction = async (req, res) => {
     }
 };
 
-const ReferencePaymentWallet = async (member_client_id,referedbyclientId,schemeAmount)=>{
-    var sip_amount = 1250;
-    var ReferedByClients_Id = [];
-    var UpdatedClientId = []
-    ReferedByClients_Id.push(referedbyclientId);
 
-    client_Reference_Payment_Wallet:
-    for(let val of ReferedByClients_Id)
-    {
-        
-        var updatedClientId_index = UpdatedClientId.indexOf(val);
-        
-        if(updatedClientId_index == -1)
-        {
-            var client_details = await clientModel.findOne({_id:new ObjectId(val)})
-            if(client_details.sip_refered_by_clientId != null)
-            {
-                ReferedByClients_Id.push(client_details.sip_refered_by_clientId)
-            }
-            
-            var referencelevelDetails = await referenceLevelModel.findOne({reference_level:client_details.sip_reference_level+1})
-
-            var bonus_amount = (sip_amount * referencelevelDetails.reference_bouns) / 100
-
-            var client_walletDetails = await cilentWalletModel.find({client_id:new ObjectId(val)}).limit(1).sort({_id:-1})
-
-            var datatoWalletSave = {
-                client_id: val,
-                wallet_trans_date: new Date(),
-                wallet_trans_desc: `Reference Payment for Level ${client_details.sip_reference_level}`,
-                wallet_credit: bonus_amount,
-                wallet_debit: 0,
-                wallet_balance: (client_walletDetails.length>0)?(client_walletDetails[0].wallet_balance + (bonus_amount - 0)):(bonus_amount - 0),
-            }
-
-
-            var client_wallet = new cilentWalletModel(datatoWalletSave);
-            client_wallet.save();
-
-            UpdatedClientId.push(val);
-
-            continue client_Reference_Payment_Wallet;
-        }
-    }
-    
-    return 'wallet updated';
-
-}
 
 export const verifyMemberUploadAction = async (req,res)=>{
     // console.log(req.body);

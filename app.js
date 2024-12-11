@@ -72,6 +72,8 @@ const __filename = fileURLToPath(import.meta.url);
 const _dirname = path.dirname(__filename);
 
 app.use('/images',express.static(path.join(_dirname,'/assets/uploads')))
+app.use('/sample',express.static(path.join(_dirname,'/assets')))
+
 
 
 
