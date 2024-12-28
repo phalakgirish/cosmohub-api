@@ -251,10 +251,14 @@ export const getClientIdByBranchIdAction = async (req, res) => {
 };
 
 export const verifyClientUploadAction = async (req,res)=>{
+    // console.log(req.body);
+    
     try
     {
         for(let i in req.body)
         {
+            // console.log(req.body[i]);
+            
             const{client_name, client_dob, client_mobile_number, client_emailId, client_gender,client_postaladdress,client_landmark,client_aadhaar_number,sip_refered_by_clientId,sip_reference_level,client_country,client_state,client_city,client_status,branch_id} = req.body[i];
 
             if(client_name == undefined || validator.isEmpty(client_name))
@@ -312,15 +316,20 @@ export const verifyClientUploadAction = async (req,res)=>{
                 req.body[i].status= 0;
                 req.body[i].msg="City/Village is required."
             }
-            else if (branch_id == undefined || validator.isEmpty(branch_id))
+            else if (branch_id == undefined || validator.isEmpty(branch_id.toString()))
             {
                 req.body[i].status= 0;
                 req.body[i].msg="Branch is required."
             }
-            else if (! await validateBranch(branch_id))
+            else if (! await validateBranch(branch_id.toString()))
             {
                 req.body[i].status= 0;
                 req.body[i].msg="Branch is invalid."
+            }
+            else if(sip_refered_by_clientId != 'null' && ! await VerifiedReferedClient(sip_refered_by_clientId.toString()))
+            {
+                req.body[i].status= 0;
+                req.body[i].msg="Referred Client Id is invalid."
             }
             else
             {
@@ -350,6 +359,11 @@ export const ImportClientUploadAction = async (req,res)=>{
                 var branchDetails = await branchModel.find({branch_code:branch_id});
 
                 var clientDetails = await clientModel.find({branch_id:new ObjectId(branchDetails[0]._id)});
+                var referedClientId
+                if(sip_refered_by_clientId != 'null' || sip_refered_by_clientId == '')
+                {
+                    referedClientId = await clientModel.findOne({client_id:sip_refered_by_clientId})
+                }
 
                 var Branchcode = branchDetails[0].branch_code
 
@@ -391,7 +405,7 @@ export const ImportClientUploadAction = async (req,res)=>{
                     client_addharcard: null,
                     client_postaladdress: client_postaladdress,
                     client_landmark: (client_landmark== 'null' || client_landmark== '' || client_landmark==undefined)?null:client_landmark,
-                    sip_refered_by_clientId:(sip_refered_by_clientId == 'null' || sip_refered_by_clientId == '')?null:sip_refered_by_clientId,
+                    sip_refered_by_clientId:(sip_refered_by_clientId == 'null' || sip_refered_by_clientId == '')?null:referedClientId._id,
                     sip_reference_level:Number(sip_reference_level),
                     client_country: client_country,
                     client_state: client_state,
@@ -474,4 +488,14 @@ export const DeleteSelectedClientction = async(req,res)=>{
         res.status(400).json({msg:'Error While Deleting Client',status:false,error:error.message})
     }
     
+}
+
+const VerifiedReferedClient = async(clientId)=>{
+
+    var clientDetails = await clientModel.findOne({client_id:clientId});
+
+    if(clientDetails == null)
+        return false;
+    else
+        return true;
 }

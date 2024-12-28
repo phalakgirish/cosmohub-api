@@ -3,6 +3,9 @@ import branchModel from "../models/branch.model.js";
 import sipPaymentModel from "../models/sipPayment.model.js";
 import sipMemberMgmtModel from "../models/sipManagerment.model.js";
 import luckyDrawModel from "../models/luckyDraw.model.js";
+import clientModel from "../models/client.model.js";
+import sipReferenceModel from "../models/sipReference.model.js";
+import cilentWalletModel from "../models/clientWallet.model.js";
 
 const ObjectId = mongoose.Types.ObjectId;
 
@@ -466,6 +469,236 @@ export const getLuckyDrawMemberDetailsAction = async (req,res)=>{
     }
 }
 
+
+export const getClientWiseCommisionDetailsAction = async (req,res)=>{
+    try{
+
+        // console.log(req.body);
+        
+        var ReferedClient_id = []
+        var UpdatedClientId = []
+        
+
+        
+
+            // if(start_Date != '' && end_Date != '')
+            // {
+            //     var startDate = new Date(start_Date);
+        
+            //     var endDate = new Date(end_Date);
+                    
+            //     filter_field.push({"Sip_Payments.sip_payment_receivedDate":{$gte:startDate,$lte:getDateOfMonth(endDate,'End')}})   
+            // }
+
+        
+
+        // console.log(query.$and[1]['Sip_Payments.sip_payment_receivedDate']);
+        
+        
+        ReferedClient_id.push({memberClientId:new ObjectId(req.body.client_id),start_Date:req.body.startDate,end_Date:req.body.endDate,level:0})
+        // console.log(staff1);
+        // res.status(200).json({ sipPayment });
+
+        ReferenceByLoop:
+        for(let val of ReferedClient_id)
+        {
+
+            var updatedClient_index = UpdatedClientId.indexOf(val)
+
+            if(updatedClient_index == -1)
+            {
+                
+                var samelevelCount = 0
+                  
+                var client_referenceDetails = await sipReferenceModel.find({sip_refered_by: new ObjectId(val.memberClientId)})
+
+                for(let i of client_referenceDetails)
+                {
+                    ReferedClient_id.push({memberClientId:i.sipmember_clientid,start_Date:req.body.startDate,end_Date:req.body.endDate,level:val.level+1})
+                }
+
+
+                UpdatedClientId.push(val)
+                if(client_referenceDetails.length != 0)
+                {
+                    // var client_reference_details = await sipReferenceModel.findOne({$and:[{sipmember_clientid:new ObjectId(val.referedbyclientId)},{sip_refered_by:new ObjectId(ReferedByClient_Id.sip_refered_by_clientId)}]}).sort({_id:-1});
+
+                    // ReferedClient_id.push({referedbyclientId:ReferedByClient_Id.sip_refered_by_clientId,comissionType:client_reference_details.comission_type,level:val.level+1})
+                                       
+                        continue ReferenceByLoop; 
+                }
+            }    
+        }  
+        // console.log(ReferedClient_id);
+        
+        var CommissionDetails = []
+
+        for(let val of ReferedClient_id)
+        {
+            var query = {}
+            var queryWallet = {}
+
+            var filter_field = []
+            var filter_fieldWallet = []
+
+
+            filter_field.push({client_id:new ObjectId(val.memberClientId)})
+            filter_fieldWallet.push({client_id:new ObjectId(val.memberClientId)})
+
+
+            if(val.start_Date != '' && val.end_Date != '')
+            {
+                var startDate = new Date(val.start_Date);
+        
+                var endDate = new Date(val.end_Date);
+                    
+                filter_field.push({"Sip_Payments.sip_payment_receivedDate":{$gte:startDate,$lte:getDateOfMonth(endDate,'End')}}) 
+                filter_fieldWallet.push({wallet_trans_date:{$gte:startDate,$lte:getDateOfMonth(endDate,'End')}})   
+
+            }
+
+            if(filter_field.length > 1)
+            {
+                query = {$and:filter_field}
+                queryWallet = {$and:filter_fieldWallet}
+            }
+            else
+            {
+                for(let val of filter_field)
+                {
+                    query = val;
+                    queryWallet = val;
+                }      
+            }
+            // console.log(queryWallet);
+            
+            var ReferedByClient_Id = await clientModel.findOne({_id: new ObjectId(val.memberClientId)})
+            .populate('sip_refered_by_clientId','client_id client_name')
+            
+            var sipDetails = await sipMemberMgmtModel.findOne({client_id:new ObjectId(val.memberClientId)}).sort({_id:1}).limit(1)
+
+            let sipMemberDetails = await sipMemberMgmtModel.aggregate([
+                
+                {
+                    $lookup:{
+                        from: "sip_payments",
+                        localField: "_id",
+                        foreignField: "sipmember_id",
+                        as: "Sip_Payments",
+                    }
+                },
+                {
+                    $unwind: {
+                        path: "$Sip_Payments",    
+                        preserveNullAndEmptyArrays: true // Preserve documents without matching payment records
+                      }
+                    // preserveNullAndEmptyArrays: true
+                },
+                {$match:query},
+                {
+                    $group:{
+                        _id:{
+                            client_id: "$client_id",
+                        },
+                        totalSIPAmount:{$sum:{ $ifNull: ["$Sip_Payments.sip_amount", 0] }},
+                        totalSIPPenaltyAmount:{$sum:{ $ifNull: ["$Sip_Payments.sip_penalty_amount", 0] }},
+                    }
+                },
+                {
+                    $project:{
+                        _id:0,
+                        client_id:"$_id.client_id",
+                        totalSIPAmount:1,
+                        totalSIPPenaltyAmount:1
+                    }
+                }
+            ])
+
+            var clientWalletDetails = await cilentWalletModel.aggregate([
+                {$match:queryWallet},
+                {
+                    $group:{
+                        _id:{
+                            client_id:"$client_id",
+                            wallet_trans_type:"$wallet_trans_type"
+                        },
+                    totalCredit:{$sum:{ $ifNull: ["$wallet_credit", 0] }}
+                    }
+                },
+                {
+                    $project:{
+                        _id:0,
+                        client_id:"$_id.client_id",
+                        wallet_trans_type:"$_id.wallet_trans_type",
+                        totalCredit:1,
+                    }
+                }
+            ])
+
+            // console.log(sipDetails);
+            // console.log(ReferedByClient_Id);
+            // console.log(sipMemberDetails);
+            // console.log(clientWalletDetails);
+
+
+            
+
+            var spot_commission = clientWalletDetails.filter((item)=>item.wallet_trans_type == 'Spot')
+            var recurring_commission = clientWalletDetails.filter((item)=>item.wallet_trans_type == 'Recurring')
+
+            var todayDate = new Date()
+            var comissionClientDetails = {
+                _id:ReferedByClient_Id._id,
+                client_id:ReferedByClient_Id.client_id,
+                client_name:ReferedByClient_Id.client_name,
+                generation:val.level,
+                referredClient_id:(ReferedByClient_Id.sip_refered_by_clientId == null)?'':ReferedByClient_Id.sip_refered_by_clientId._id,
+                referred_client_id:(ReferedByClient_Id.sip_refered_by_clientId == null)?'':ReferedByClient_Id.sip_refered_by_clientId.client_id,
+                referred_client_name:(ReferedByClient_Id.sip_refered_by_clientId == null)?'':ReferedByClient_Id.sip_refered_by_clientId.client_name,
+                total_invested_amount:(sipMemberDetails.length == 0)?0:sipMemberDetails[0].totalSIPAmount,
+                total_spot_commission:(spot_commission.length == 0)?0:spot_commission[0].totalCredit,
+                total_recurring_commission:(recurring_commission == 0)?0:recurring_commission[0].totalCredit,
+                sipJoinDate:sipDetails.sipmember_doj,
+                months:calculateMonthDiff(sipDetails.sipmember_doj,todayDate)
+            }
+            
+            CommissionDetails.push(comissionClientDetails)
+
+        }
+
+        const clientMap = CommissionDetails.reduce((map, client,index) => {
+            var clientDTs = {id:index+1,text:`${client.client_id}, ${client.client_name}, ${formatDate(client.sipJoinDate)}, ${client.months}, ${client.total_invested_amount}, ${client.total_spot_commission}, ${client.total_recurring_commission}`}
+            map[client._id] = { ...clientDTs, children: [] };
+            return map;
+        }, {});
+    
+        // Build the hierarchical structure
+        let root = null;
+    
+        CommissionDetails.forEach((client) => {
+            if (client.referredClient_id) {
+                // Add client to its referrer's referred_clients array
+                const referrer = clientMap[client.referredClient_id];
+                if (referrer) {
+                    referrer.children.push(clientMap[client._id]);
+                }
+            } else {
+                // Client with no referrer is the root
+                root = clientMap[client._id];
+            }
+        });
+    
+        // return root;
+
+        res.status(200).json({msg:'record found',CommissionDetails:CommissionDetails,treeView:root})
+          
+    }
+    catch(error)
+    {
+        res.status(400).json({ error: error.message });
+    }
+}
+
 const formatMonthDate = (dateString)=> {
     const [year, month] = dateString.split('-');
     
@@ -508,5 +741,26 @@ const getDateOfMonth = (monthstr,pos)=>{
     }
 
     return monthstr;
+}
+
+const  calculateMonthDiff = (startDate, endDate)=> {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+  
+    const yearsDiff = end.getFullYear() - start.getFullYear();
+    const monthsDiff = end.getMonth() - start.getMonth();
+  
+    // Calculate total months difference
+    const totalMonths = yearsDiff * 12 + monthsDiff;
+  
+    return totalMonths;
+  }
+
+  const formatDate = (date) => {
+    return date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    });
 }
 

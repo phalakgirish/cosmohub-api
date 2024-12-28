@@ -14,7 +14,7 @@ const clientSchema = new Schema({
   client_aadhaar_number: { type: String, required: true },
   client_postaladdress: { type: String, required:true },
   client_landmark: { type: String, default: null },
-  sip_refered_by_clientId: { type: mongoose.Schema.ObjectId, default: null },
+  sip_refered_by_clientId: { type: mongoose.Schema.ObjectId, ref:'clients',default: null },
   sip_reference_level: { type: Number },
   client_country: { type: String, default: null },
   client_state: { type: String, default: null },

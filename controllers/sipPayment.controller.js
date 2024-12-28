@@ -202,6 +202,7 @@ export const createSipPaymentAction = async (req, res) => {
             var datatoWalletSave = {
                 client_id: client_Id.client_id,
                 wallet_trans_date: new Date(),
+                wallet_trans_type: '',
                 wallet_trans_desc: `SIP Payment for Receipt: ${NewReceipt_No}`,
                 wallet_credit: 0,
                 wallet_debit: (sip_amount+sip_penalty_amount),
@@ -621,6 +622,7 @@ const ReferencePaymentWallet = async (member_client_id, sipAmt, referedbyclientI
                 var datatoWalletSave = {
                     client_id: val.referedbyclientId,
                     wallet_trans_date: new Date(),
+                    wallet_trans_type:comissionType,
                     wallet_trans_desc: `Reference Payment for ${(comissionType == 'Spot')? `Spot Comission`:`Level ${client_details.sip_reference_level}`}`,
                     wallet_credit: bonus_amount,
                     wallet_debit: 0,
