@@ -16,6 +16,8 @@ const branchSchema = new Schema({
     branch_pincode:{ type: String, required: true },
     branch_state: {type: String, required:true },
     branch_status: { type: Boolean, required: true }
+},{
+    timestamps:true
 });
 
 const branchModel = mongoose.model('branch', branchSchema);

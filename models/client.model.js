@@ -20,7 +20,11 @@ const clientSchema = new Schema({
   client_state: { type: String, default: null },
   client_city: { type: String, default: null },
   client_status: { type: Boolean, required:true },
-  branch_id:{ type: mongoose.Schema.ObjectId, required:true }
+  client_bank_name : { type: String, default: null },
+  client_bank_account_no: { type: String, default: null },
+  client_bank_ifsc: { type: String, default: null },
+  client_others: { type: String, default: null },
+  branch_id:{ type: mongoose.Schema.ObjectId,ref:'branch', required:true }
 });
 
 const clientModel = mongoose.model('clients', clientSchema);

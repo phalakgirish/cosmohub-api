@@ -26,6 +26,8 @@ import { getSIPMemberIdShedulerAction } from "./controllers/sipPayment.controlle
 import referenceLevelRouter from "./routes/referenceLevel.route.js";
 import referenceSchemePayRouter from "./routes/referenceSchemePay.route.js";
 import sipCategoryRouter from "./routes/sipCategory.route.js";
+import referenceSchemeRouter from "./routes/referenceScheme.route.js";
+import categoryRouter from "./routes/category.route.js";
 
 
 
@@ -58,11 +60,17 @@ app.use('/dashboard',dashboardRouter)
 app.use('/referencelevel',referenceLevelRouter)
 app.use('/referencesch',referenceSchemePayRouter)
 app.use('/sipcategory',sipCategoryRouter)
+app.use('/referencescheme',referenceSchemeRouter)
+app.use('/category',categoryRouter)
 
 
 
 
-cron.schedule('59 23 14 * *',getSIPMemberIdShedulerAction,{scheduled:true,timezone:"Asia/Kolkata"})
+
+
+
+
+// cron.schedule('59 23 14 * *',getSIPMemberIdShedulerAction,{scheduled:true,timezone:"Asia/Kolkata"})
 
 
 

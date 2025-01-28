@@ -12,7 +12,7 @@ export  async function SendEmail (staff_email_id,password) {
 
         // send mail with defined transport object
         const info = await transporter.sendMail({
-            from: '"CosmoHub Group Of Business" <generalmanagercosmohub@gmail.com>', // sender address
+            from: '"Cosmohub Solutions Pvt. Ltd." <generalmanagercosmohub@gmail.com>', // sender address
             to: staff_email_id, // list of receivers
             subject: "User Login Credentials", // Subject line
             text: "Hello world?", // plain text body
@@ -52,7 +52,7 @@ export  async function SendDiscontuneMemberEmail (staff_email_id,memberlist) {
 
     // send mail with defined transport object
     const info = await transporter.sendMail({
-        from: '"CosmoHub Group Of Business" <generalmanagercosmohub@gmail.com>', // sender address
+        from: '"Cosmohub Solutions Pvt. Ltd." <generalmanagercosmohub@gmail.com>', // sender address
         to: staff_email_id, // list of receivers
         subject: "Discountined SIP Member List", // Subject line
         text: "Hello world?", // plain text body
@@ -115,7 +115,7 @@ export default async function SendVerifyEmail(emailid, otp) {
     });
 
     const info = await transporter.sendMail({
-        from: '"CosmoHub Group Of Business" <generalmanagercosmohub@gmail.com>',
+        from: '"Cosmohub Solutions Pvt. Ltd." <generalmanagercosmohub@gmail.com>',
         to: emailid,
         subject: "Verify Email OTP Generated",
         text: `Your OTP is ${otp}`,

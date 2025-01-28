@@ -34,10 +34,9 @@ export const createClientAction = async (req, res) => {
                 console.log(err);
               } 
               else{
-                console.log(req.body);
+                // console.log(req.body);
                 // var personalDetails = req.body.personalDetails
-                const{client_name, client_dob, client_mobile_number, client_emailId, client_gender, client_otherdocs, client_addharcard,
-                    client_aadhaar_number,client_postaladdress,client_landmark,sip_refered_by_clientId,sip_reference_level,client_country,client_state,client_city,client_status,branch_id} = req.body;
+                const{client_name, client_dob, client_mobile_number, client_emailId, client_gender, client_otherdocs, client_addharcard,client_aadhaar_number,client_postaladdress,client_landmark,sip_refered_by_clientId,sip_reference_level,client_country,client_state,client_city,client_status,client_bank_name, client_bank_account_no, client_bank_ifsc,client_others,branch_id} = req.body;
 
                 var clientDetails = await clientModel.find({branch_id:new ObjectId(branch_id)});
 
@@ -79,6 +78,7 @@ export const createClientAction = async (req, res) => {
                     client_mobile_number: client_mobile_number,
                     client_emailId: (client_emailId== 'undefined' || client_emailId== '')?null:client_emailId,
                     client_gender: client_gender,
+                    client_others:client_others,
                     client_otherdocs: (req.files.client_otherdocs == undefined || req.files.client_otherdocs == '') ? null : req.files.client_otherdocs[0].filename,
                     client_addharcard: req.files.client_addharcard[0].filename,
                     client_aadhaar_number: client_aadhaar_number,
@@ -90,6 +90,9 @@ export const createClientAction = async (req, res) => {
                     client_state: client_state,
                     client_city: client_city,
                     client_status:client_status,
+                    client_bank_name:client_bank_name,
+                    client_bank_account_no:client_bank_account_no,
+                    client_bank_ifsc:client_bank_ifsc,
                     branch_id:branch_id
                 }
 
@@ -115,6 +118,8 @@ export const getClientByIdAction = async (req, res) => {
         var client = await clientModel.aggregate([
             {$match:{_id:new ObjectId(req.params.client_id)}},
           ])
+        //   console.log(client);
+          
         if (client.length == 0) {
             return res.status(404).json({ message: 'Client not found',status:false });
         }
@@ -131,21 +136,31 @@ export const getClientAction = async (req, res) => {
         const limit = 10;
         const skip = (pageNumber - 1) * limit;
         let client 
+        let client1 
+
         
         if(branch_id == '0')
         {
             client = await clientModel.find() //.skip(skip).limit(limit)
+            client1 = await clientModel.find()
+            .populate('sip_refered_by_clientId','client_id client_name')
+            .populate('branch_id','branch_name') //.skip(skip).limit(limit)
+
         }
         else
         {
             client = await clientModel.find({branch_id:new ObjectId(branch_id)}) //.skip(skip).limit(limit)
+            client1 = await clientModel.find({branch_id:new ObjectId(branch_id)})
+            .populate('sip_refered_by_clientId','client_id client_name')
+            .populate('branch_id','branch_name') //.skip(skip).limit(limit)
+
 
         }
         if (!client) {
             return res.status(404).json({ message: 'Client not found',status:false });
         }
         // console.log(client1);
-        res.status(200).json({ client });
+        res.status(200).json({ client,client1 });
         
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -180,7 +195,7 @@ export const UpdateClientAction = async (req, res) => {
               {
                 // console.log(req.body);
                 
-            const{client_id, client_name, client_dob, client_mobile_number, client_emailId, client_gender, client_pancard, client_addharcard,client_aadhaar_number,client_postaladdress,sip_refered_by_clientId,sip_reference_level,client_landmark,client_country,client_state,client_city,client_status,branch_id} = req.body; 
+            const{client_id, client_name, client_dob, client_mobile_number, client_emailId, client_gender, client_pancard, client_addharcard,client_aadhaar_number,client_postaladdress,sip_refered_by_clientId,sip_reference_level,client_landmark,client_country,client_state,client_city,client_status,client_bank_name, client_bank_account_no, client_bank_ifsc,client_others,branch_id} = req.body; 
 
             var client_record = await clientModel.find({_id:new ObjectId(req.params.client_id)});
 
@@ -206,6 +221,7 @@ export const UpdateClientAction = async (req, res) => {
                 client_mobile_number: client_mobile_number,
                 client_emailId: (client_emailId== 'null' || client_emailId== '')?null:client_emailId,
                 client_gender: client_gender,
+                client_others:client_others,
                 client_otherdocs: clientOtherdocs,
                 client_addharcard: clientAddharCard,
                 client_aadhaar_number: client_aadhaar_number,
@@ -216,6 +232,9 @@ export const UpdateClientAction = async (req, res) => {
                 client_country: client_country,
                 client_state: client_state,
                 client_city: client_city,
+                client_bank_name:client_bank_name,
+                client_bank_account_no:client_bank_account_no,
+                client_bank_ifsc:client_bank_ifsc,
                 client_status:client_status,
                 branch_id:branch_id
             }

@@ -41,7 +41,7 @@ export const createSipMemberAction = async (req, res) => {
                 console.log(err);
               } 
               else{
-                const{client_id,sipmember_name,sipmember_bank_name,sipmember_account_number,sipmember_ifsc_code,sipmember_upi_id,sipmember_doj,sipmember_maturity_date,sipmember_nominee_name,sipmember_nominee_age,sipmember_nominee_relation,sipmember_nominee_mobile,sipmember_nominee_otherdocs,sipmember_nominee_addharcard,sipmember_nominee_aadhaarno,sipmember_sip_category,sipmember_remarks,sipmember_status,branch_id} = req.body;
+                const{client_id,sipmember_name,sipmember_bank_name,sipmember_account_number,sipmember_ifsc_code,sipmember_upi_id,sipmember_doj,sipmember_maturity_date,sipmember_nominee_name,sipmember_nominee_age,sipmember_nominee_relation,sipmember_nominee_mobile,sipmember_nominee_otherdocs,sipmember_nominee_addharcard,sipmember_nominee_aadhaarno,sipmember_sip_category,sipmember_remarks,sipmember_status,sipmember_others, branch_id} = req.body;
                 // console.log(req.files);
                 
                 var sipDetails = await sipMemberMgmtModel.find();
@@ -94,6 +94,7 @@ export const createSipMemberAction = async (req, res) => {
                     sipmember_remarks:sipmember_remarks,
                     sipmember_sip_category:sipmember_sip_category,
                     sipmember_status:sipmember_status,
+                    sipmember_others:sipmember_others,
                     branch_id:branch_id
                 }
 
@@ -196,7 +197,7 @@ export const UpdateSipMemberAction = async (req, res) => {
               } 
               else{
 
-                const{sipmember_id,client_id,sipmember_name,sipmember_bank_name,sipmember_account_number,sipmember_ifsc_code,sipmember_upi_id,sipmember_doj,sipmember_maturity_date,sipmember_nominee_name,sipmember_nominee_age,sipmember_nominee_relation,sipmember_nominee_mobile,sipmember_nominee_otherdocs,sipmember_nominee_addharcard,sipmember_nominee_aadhaarno,sipmember_sip_category,sipmember_remarks,sipmember_status,branch_id} = req.body;
+                const{sipmember_id,client_id,sipmember_name,sipmember_bank_name,sipmember_account_number,sipmember_ifsc_code,sipmember_upi_id,sipmember_doj,sipmember_maturity_date,sipmember_nominee_name,sipmember_nominee_age,sipmember_nominee_relation,sipmember_nominee_mobile,sipmember_nominee_otherdocs,sipmember_nominee_addharcard,sipmember_nominee_aadhaarno,sipmember_sip_category,sipmember_remarks,sipmember_status,sipmember_others,branch_id} = req.body;
 
                 const sipMember_record = await sipMemberMgmtModel.find({_id:req.params.sip_id});
                 
@@ -233,6 +234,7 @@ export const UpdateSipMemberAction = async (req, res) => {
                     sipmember_sip_category:sipmember_sip_category,
                     sipmember_remarks:sipmember_remarks,
                     sipmember_status:sipmember_status,
+                    sipmember_others:sipmember_others,
                     branch_id:branch_id
                 }
                 

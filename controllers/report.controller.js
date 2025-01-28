@@ -469,7 +469,6 @@ export const getLuckyDrawMemberDetailsAction = async (req,res)=>{
     }
 }
 
-
 export const getClientWiseCommisionDetailsAction = async (req,res)=>{
     try{
 
@@ -676,10 +675,10 @@ export const getClientWiseCommisionDetailsAction = async (req,res)=>{
         let root = null;
     
         CommissionDetails.forEach((client) => {
-            if (client.referredClient_id) {
+            if (client.referredClient_id && client.generation > 0) {
                 // Add client to its referrer's referred_clients array
                 const referrer = clientMap[client.referredClient_id];
-                if (referrer) {
+                if (referrer ) {
                     referrer.children.push(clientMap[client._id]);
                 }
             } else {
@@ -689,6 +688,7 @@ export const getClientWiseCommisionDetailsAction = async (req,res)=>{
         });
     
         // return root;
+        
 
         res.status(200).json({msg:'record found',CommissionDetails:CommissionDetails,treeView:root})
           
@@ -756,7 +756,7 @@ const  calculateMonthDiff = (startDate, endDate)=> {
     return totalMonths;
   }
 
-  const formatDate = (date) => {
+const formatDate = (date) => {
     return date.toLocaleDateString('en-GB', {
       day: '2-digit',
       month: '2-digit',

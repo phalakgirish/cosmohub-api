@@ -22,6 +22,7 @@ const sipMemberMgmtSchema = new Schema({
   sipmember_sip_category: { type: mongoose.Schema.ObjectId, required:true },
   sipmember_remarks: { type: String, default:null},
   sipmember_status: {type: String },
+  sipmember_others: {type: String},
   branch_id:{ type: mongoose.Schema.ObjectId, required:true }
 });
 

@@ -12,7 +12,7 @@ export default async function changePasswordSendEmail(staff_email_id,password) {
 
     // send mail with defined transport object
     const info = await transporter.sendMail({
-        from: '"CosmoHub Group Of Business" <generalmanagercosmohub@gmail.com>', // sender address
+        from: '"Cosmohub Solutions Pvt. Ltd." <generalmanagercosmohub@gmail.com>', // sender address
         to: staff_email_id, // list of receivers
         subject: "Change Password", // Subject line
         text: "Hello world?", // plain text body

@@ -7,7 +7,7 @@ import referenceSchemePaymentModel from "../models/referenceSchemePay.model.js";
 const ObjectId = mongoose.Types.ObjectId;
 
 export const createReferenceSchemePaymentAction = async (req, res) => {
-    const{client_id,client_name,reference_scheme_category,reference_scheme_amount,ref_payment_mode,ref_payment_refno,ref_payment_receivedBy,ref_payment_receivedDate,branch_id} = req.body; 
+    const{client_id,client_name,reference_category,reference_scheme,reference_scheme_amount,ref_payment_mode,ref_payment_refno,ref_payment_receivedBy,ref_payment_receivedDate,branch_id} = req.body; 
 
     try {
 
@@ -43,7 +43,8 @@ export const createReferenceSchemePaymentAction = async (req, res) => {
             refschpayment_receiptno: NewReceipt_No,
             client_id: client_id,
             client_name: client_name,
-            // reference_scheme_category: reference_scheme_category,
+            reference_category: reference_category,
+            reference_scheme: reference_scheme,
             reference_scheme_amount: reference_scheme_amount,
             ref_payment_mode: ref_payment_mode,
             ref_payment_refno: ref_payment_refno,
@@ -172,7 +173,7 @@ export const deleteReferenceSchPaymentAction = async (req, res) => {
 
 export const updateReferenceSchemePaymentAction = async (req, res) => {
 
-    const{refschpayment_receiptno,client_id,client_name,reference_scheme_category,reference_scheme_amount,ref_payment_mode,ref_payment_refno,ref_payment_receivedBy,ref_payment_receivedDate,branch_id} = req.body; 
+    const{refschpayment_receiptno,client_id,client_name,reference_category,reference_scheme,reference_scheme_amount,ref_payment_mode,ref_payment_refno,ref_payment_receivedBy,ref_payment_receivedDate,branch_id} = req.body; 
 
     try {
 
@@ -180,7 +181,8 @@ export const updateReferenceSchemePaymentAction = async (req, res) => {
             refschpayment_receiptno: refschpayment_receiptno,
             client_id: client_id,
             client_name: client_name,
-            // reference_scheme_category: reference_scheme_category,
+            reference_category: reference_category,
+            reference_scheme: reference_scheme,
             reference_scheme_amount: reference_scheme_amount,
             ref_payment_mode: ref_payment_mode,
             ref_payment_refno: ref_payment_refno,
