@@ -5,7 +5,7 @@ import referenceLevelModel from "../models/referenceLevel.model.js";
 const ObjectId = mongoose.Types.ObjectId;
 
 export const createReferenceLevelAction = async (req, res) => {
-    const{reference_level,reference_bouns,reference_effective,reference_status} = req.body;  
+    const{reference_level,reference_category,reference_bouns,reference_effective,reference_status} = req.body;  
     // console.log(req.body);
      
 
@@ -14,6 +14,7 @@ export const createReferenceLevelAction = async (req, res) => {
 
         var DataToSave = {
             reference_level: reference_level,
+            reference_category:reference_category,
             reference_bouns: reference_bouns,
             reference_effective: reference_effective,
             reference_status: reference_status,
@@ -75,11 +76,12 @@ export const deleteReferenceLevelAction = async (req, res) => {
 };
 
 export const updateReferenceLevelAction = async (req, res) => {
-    const{reference_level,reference_bouns,reference_effective,reference_status} = req.body;    
+    const{reference_level,reference_category,reference_bouns,reference_effective,reference_status} = req.body;    
     try {
 
         var DataToSave = {
             reference_level: reference_level,
+            reference_category:reference_category,
             reference_bouns: reference_bouns,
             reference_effective: reference_effective,
             reference_status: reference_status,

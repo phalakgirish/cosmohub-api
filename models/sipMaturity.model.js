@@ -11,7 +11,7 @@ const sipMaturitySchema = new Schema({
     sip_payment_mode: { type: String, required: true },
     sip_payment_paidBy: { type: mongoose.Schema.ObjectId, required: true },
     sip_payment_paidDate: { type: Date, required: true },
-    sip_maturity_doc: { type: String },
+    sip_maturity_doc: { type: String, default: null },
     branch_id:{ type: mongoose.Schema.ObjectId, required:true }
 });
 

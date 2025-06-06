@@ -74,7 +74,7 @@ export const createSipMaturityAction = async (req, res) => {
                         sip_payment_mode: sip_payment_mode,
                         sip_payment_paidBy: sip_payment_paidBy,
                         sip_payment_paidDate: sip_payment_paidDate,
-                        sip_maturity_doc: req.files.sip_maturity_doc[0].filename,
+                        sip_maturity_doc:  (req.files.sip_maturity_doc == undefined || req.files.sip_maturity_doc == '') ? null : req.files.sip_maturity_doc[0].filename,
                         branch_id:branch_id
                     }
 

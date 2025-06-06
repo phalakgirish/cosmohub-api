@@ -5,12 +5,13 @@ const ObjectId = mongoose.Types.ObjectId;
 
 
 export const createSipCategoryAction = async (req, res) => {
-    const{sipcategory_name,sipcategory_status} = req.body;  
+    const{sipcategory_name,is_commission_calculate,sipcategory_status} = req.body;  
 
     try {
 
         var DataToSave = {
             sipcategory_name: sipcategory_name,
+            is_commission_calculate: is_commission_calculate,
             sipcategory_status: sipcategory_status,
         }
 
@@ -67,12 +68,13 @@ export const deleteSipCategoryAction = async (req, res) => {
 };
 
 export const updateSipCategoryAction = async (req, res) => {
-    const{sipcategory_name,sipcategory_status} = req.body;  
+    const{sipcategory_name,is_commission_calculate,sipcategory_status} = req.body;  
    
     try {
 
         var DataToSave = {
             sipcategory_name: sipcategory_name,
+            is_commission_calculate: is_commission_calculate,
             sipcategory_status: sipcategory_status,
         }
         

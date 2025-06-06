@@ -10,6 +10,10 @@ const clientWalletSchema = new Schema({
     wallet_credit: { type: Number, required: true },
     wallet_debit: { type: Number, required: true },
     wallet_balance: { type: Number, required: true },
+    wallet_credit_lock: { type: Boolean, required: true },
+    payment_id:{ type: mongoose.Schema.ObjectId, required: true },
+    sipmember_id:{ type: mongoose.Schema.ObjectId, required: true },
+    paymentbyclient_id:{ type: mongoose.Schema.ObjectId, required: true }
 });
 
 const cilentWalletModel = mongoose.model('client_Wallet', clientWalletSchema);

@@ -13,8 +13,8 @@ const referenceSchemePaymentSchema = new Schema({
     ref_payment_refno: { type: String },
     ref_payment_receivedBy: { type: mongoose.Schema.ObjectId, required: true },
     ref_payment_receivedDate: { type: Date, required: true },
+    ref_payment_expirationDate: { type: Date, required: true },
     branch_id:{ type: mongoose.Schema.ObjectId, required:true }
-
 });
 
 const referenceSchemePaymentModel = mongoose.model('reference_scheme_payment', referenceSchemePaymentSchema);

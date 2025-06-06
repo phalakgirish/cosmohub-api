@@ -1,7 +1,7 @@
 import express from 'express';
 const sipManagementRouter = express.Router();
 import Auth from '../env/auth.js';
-import { createSipMemberAction, createSipMemberReplicaByIdAction, DeleteSipMemberAction, getSipMemberByBranchIdAction, getSipMemberByClientIdAction, getSipMemberByIdAction, getSipMembersAction, ImportSipMemberUploadAction, UpdateSipMemberAction, verifyMemberUploadAction } from '../controllers/sipManagement.controller.js';
+import { createSipMemberAction, createSipMemberReplicaByIdAction, DeleteSipMemberAction, DiscontinueAction, getSipMemberByBranchIdAction, getSipMemberByClientIdAction, getSipMemberByIdAction, getSipMembersAction, ImportSipMemberUploadAction, UpdateSipMemberAction, verifyMemberUploadAction } from '../controllers/sipManagement.controller.js';
 
 
 sipManagementRouter.post('/',Auth,createSipMemberAction);
@@ -15,6 +15,7 @@ sipManagementRouter.get('/branch/:branch_id',Auth,getSipMemberByBranchIdAction);
 sipManagementRouter.get('/replicate/:sip_id',Auth,createSipMemberReplicaByIdAction); 
 sipManagementRouter.post('/verify-data',Auth,verifyMemberUploadAction); // sip_maturity // sip_Management
 sipManagementRouter.post('/import-data',Auth,ImportSipMemberUploadAction);
+sipManagementRouter.put('/discontinue/:id', Auth, DiscontinueAction);  // discontinue status
 
 
 

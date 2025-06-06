@@ -24,10 +24,14 @@ const clientSchema = new Schema({
   client_bank_account_no: { type: String, default: null },
   client_bank_ifsc: { type: String, default: null },
   client_others: { type: String, default: null },
-  branch_id:{ type: mongoose.Schema.ObjectId,ref:'branch', required:true }
-});
+  client_sip_refrence_family : { type: Boolean, default: null},
+  branch_id:{ type: mongoose.Schema.ObjectId,ref:'branch', required:true },
+  // createdAt: { type: Date, immutable: false, default: Date.now },
+},{ timestamps: true });
 
 const clientModel = mongoose.model('clients', clientSchema);
 
 export default clientModel;
+
+// db["clients"].updateMany({createdAt:null},{$set:{createdAt:new Date("2024-10-15")}})
     

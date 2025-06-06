@@ -8,6 +8,7 @@ import referenceSchemePaymentModel from "../models/referenceSchemePay.model.js";
 import clientModel from "../models/client.model.js";
 import referenceLevelModel from "../models/referenceLevel.model.js";
 import referenceSchemeModel from "../models/referenceScheme.model.js";
+import sipCategoryModel from "../models/sipCategory.model.js";
 
 
 
@@ -47,236 +48,7 @@ export const createSipPaymentAction = async (req, res) => {
                     NewReceipt_No = 'SIPR-'+ActualNo.toString()
                 }
 
-                var sipMemberDts = await sipMemberMgmtModel.findOne({_id:new ObjectId(sipmember_id)})
-                var ClientDetails = await clientModel.findOne({_id:new ObjectId(sipMemberDts.client_id)})
-
-                // var Client_Ref_sch_pay_Dts = await referenceSchemePaymentModel.findOne({client_id:new ObjectId(ClientDetails.sip_refered_by_clientId)}).sort({_id: -1})
-
-                var Client_Ref_sch_pay_Dts = await referenceSchemePaymentModel.findOne({$and:[{client_id:new ObjectId(ClientDetails.sip_refered_by_clientId)},{reference_category:"SIP"}]}).sort({_id: -1})
-                // console.log(Client_Ref_sch_pay_Dts);
                 
-
-                if(ClientDetails.sip_refered_by_clientId != null)
-                {
-                    if(Client_Ref_sch_pay_Dts != null)
-                    {
-                        var comissionType = 'Spot'
-                        var comissionWay = "Single"
-                        var referenceSchemeDetails = await referenceSchemeModel.findOne({_id:new ObjectId(Client_Ref_sch_pay_Dts.reference_scheme)})
-                        if(referenceSchemeDetails.refScheme_comission == "Level" || referenceSchemeDetails.refScheme_comission == "Direct")
-                        {
-                            comissionType = 'Recurring'
-                            if(referenceSchemeDetails.refScheme_comission == "Direct")
-                            {
-                                comissionWay = "Direct"
-                            }  
-                        }
-
-                        var client_reference_details = await sipReferenceModel.findOne({$and:[{sipmember_clientid:new ObjectId(sipMemberDts.client_id)},{sip_refered_by:new ObjectId(ClientDetails.sip_refered_by_clientId)},{comission_type:comissionType}]}).sort({_id:-1});
-
-                        var newdate = new Date();
-                        // newdate.setMinutes(newdate.getMinutes()+330);
-                        var todaydate = newdate.getFullYear()+'-'+((newdate.getMonth() + 1)<=9?'0'+(newdate.getMonth() + 1):newdate.getMonth() + 1)+'-'+(newdate.getDate());
-                        var from_date = new Date(todaydate);
-                        from_date.setHours(5,30,0,0);
-                        
-                        var ReferedClient_id = []
-                        var UpdatedClientId = [] 
-
-                        var sip_refered_by_clientId = ClientDetails.sip_refered_by_clientId;
-
-                        if(!client_reference_details)
-                        {
-                            var referedClientCount = await sipReferenceModel.find({sip_refered_by:new ObjectId(ClientDetails.sip_refered_by_clientId)})
-
-                            if(referedClientCount.length >= 5)
-                            {
-                                var GetReferedClientDetails = await clientModel.findOne({_id:new ObjectId(ClientDetails.sip_refered_by_clientId)})
-        
-                                if(GetReferedClientDetails.sip_refered_by_clientId != null)
-                                {
-                                    var AllReferedClient =  await sipReferenceModel.find({sip_refered_by:new ObjectId(GetReferedClientDetails.sip_refered_by_clientId)}).sort({_id:1});
-        
-                                    if(AllReferedClient.length > 0)
-                                    {
-                                        var AllReferedClientId = [];
-        
-                                        for(let id of AllReferedClient)
-                                        {
-                                            if(id.sipmember_clientid != sip_refered_by_clientId)
-                                            {
-                                                    AllReferedClientId.push(id.sipmember_clientid)
-                                            }  
-                                        }
-        
-                                        var countId = await sipReferenceModel.aggregate([
-                                            {$match:{sip_refered_by:{$in:AllReferedClientId}}},
-                                            {
-                                                $group:{
-                                                    _id:{
-                                                        sip_refered_by:"$sip_refered_by"
-                                                    },
-                                                    totalCount:{$sum: 1}
-                                                }
-                                            }
-                                        ])
-        
-                                        // console.log(countId);
-        
-                                        var referenceId = countId.filter((item)=> item.totalCount < 5)
-        
-                                        if(referenceId.length > 0)
-                                        {
-                                            var tempcount = 0
-                                            var tempreferenceId
-                                            var tempReferDate = null
-                                            for(let val of referenceId)
-                                            {
-                                                    
-                                                if(val.totalCount > tempcount)
-                                                {
-                                                    tempcount = val.totalCount
-                                                    tempreferenceId = val._id.sip_refered_by
-                                                    var referencDetils = await sipReferenceModel.findOne({sipmember_clientid:new ObjectId(val._id.sip_refered_by)})
-        
-                                                    tempReferDate = referencDetils.sip_referedDate
-                                                }
-                                                else if(val.totalCount == tempcount)
-                                                {
-                                                    var referencDetils = await sipReferenceModel.findOne({sipmember_clientid:new ObjectId(val._id.sip_refered_by)})
-        
-                                                    if(tempReferDate != null)
-                                                    {
-                                                        if(referencDetils.sip_referedDate > tempReferDate)
-                                                        {
-                                                            tempcount = val.totalCount
-                                                            tempreferenceId = val._id.sip_refered_by
-                                                            tempReferDate = referencDetils.sip_referedDate
-                                                        }
-                                                    }
-                                                    else
-                                                    {
-                                                        tempcount = val.totalCount
-                                                        tempreferenceId = val._id.sip_refered_by
-                                                        tempReferDate = referencDetils.sip_referedDate
-                                                    }   
-                                                }
-        
-                                            }
-        
-                                            sip_refered_by_clientId = tempreferenceId
-        
-                                        }
-                                    }
-                                }
-                            }
-                            
-                            var DataToSaveSIPReference = {
-                                sipmember_clientid: sipMemberDts.client_id,
-                                sip_refered_by: sip_refered_by_clientId,
-                                sip_referedDate: from_date,
-                                comission_type: comissionType,
-                                branch_id: branch_id
-                            }
-
-                            var ClientLevel = await clientModel.findOne({_id: new ObjectId(sip_refered_by_clientId)})
-                            ReferedClient_id.push({referedbyclientId:sip_refered_by_clientId,comissionType:comissionType,level:0})
-
-                            var updateClientDetails = await clientModel.updateOne({_id:new ObjectId(sipMemberDts.client_id)},{$set:{sip_refered_by_clientId:sip_refered_by_clientId}})
-                            const sip_reference = new sipReferenceModel(DataToSaveSIPReference);
-                            await sip_reference.save();
-                        }
-
-                        // if( comissionType == 'Spot' )
-                        
-                        var client_refe_wallet = await ReferencePaymentWallet(sipMemberDts.client_id,sip_amount,sip_refered_by_clientId,Client_Ref_sch_pay_Dts.reference_scheme_amount,(!client_reference_details)?from_date:client_reference_details.sip_referedDate,sipMemberDts.sipmember_doj,comissionType,sip_payment_receivedDate,comissionWay)
-
-                        //{referedbyclientId:ClientDetails.sip_refered_by_clientId,comissionType:comissionType,level:0}
-                        ReferenceByLoop:
-                            for(let val of ReferedClient_id)
-                            {
-
-                                var updatedClient_index = UpdatedClientId.indexOf(val)
-
-                                if(updatedClient_index == -1)
-                                {
-                                    var samelevelCount = 0
-                                    var ReferedByClient_Id = await clientModel.findOne({_id: new ObjectId(val.referedbyclientId)})
-                                    
-                                    var client_referenceDetails = await sipReferenceModel.find({sip_refered_by: new ObjectId(val.referedbyclientId)})
-
-                                    if(val.comissionType == 'Recurring')
-                                    {
-                                        for(let client of client_referenceDetails)
-                                        {
-                                            let client_dts = await clientModel.findOne({$and:[{_id: new ObjectId(client.sipmember_clientid)},{sip_reference_level:{$gte:ReferedByClient_Id.sip_reference_level}}]})
-        
-                                            // console.log('114',client_dts);
-                                                
-                                            if(client_dts != null)
-                                            {
-                                                samelevelCount = samelevelCount + 1
-                                            }
-                                        }
-
-                                        if(samelevelCount  >= 5)
-                                        {
-                                            if(ReferedByClient_Id.sip_reference_level <= 6)
-                                            {
-                                                var client_update_reference_level = await clientModel.updateOne(
-                                                { _id: new ObjectId(val.referedbyclientId) },
-                                                {
-                                                    $set: {
-                                                        sip_reference_level: ReferedByClient_Id.sip_reference_level+1,
-                                                    },
-                                                })   
-                                            }          
-                                        }
-                                    }
-
-                                    // for(let client of client_referenceDetails)
-                                    // {
-                                    //     let client_dts = await clientModel.findOne({$and:[{_id: new ObjectId(client.sipmember_clientid)},{sip_reference_level:ReferedByClient_Id.sip_reference_level}]})
-
-                                    //     // console.log('114',client_dts);
-                                        
-                                    //     if(client_dts)
-                                    //     {
-                                    //         samelevelCount = samelevelCount + 1
-                                    //     }
-                                    // }
-
-                                    // if(samelevelCount  == 5)
-                                    // {
-                                    //     if(ReferedByClient_Id.sip_reference_level <= 6)
-                                    //     {
-                                    //         var client_update_reference_level = await clientModel.updateOne(
-                                    //         { _id: new ObjectId(val) },
-                                    //             {
-                                    //             $set: {
-                                    //                 sip_reference_level: ReferedByClient_Id.sip_reference_level+1,
-                                    //             },
-                                    //             })   
-                                    //     }   
-                                        
-                                    // }  
-
-                                    UpdatedClientId.push(val)
-                                    if(ReferedByClient_Id.sip_refered_by_clientId != null)
-                                    {
-                                        var client_reference_details = await sipReferenceModel.findOne({$and:[{sipmember_clientid:new ObjectId(val.referedbyclientId)},{sip_refered_by:new ObjectId(ReferedByClient_Id.sip_refered_by_clientId)}]}).sort({_id:-1});
-
-                                        if(client_reference_details != null)
-                                        {
-                                            ReferedClient_id.push({referedbyclientId:ReferedByClient_Id.sip_refered_by_clientId,comissionType:client_reference_details.comission_type,level:val.level+1})
-                                        }
-
-                                        continue ReferenceByLoop; 
-                                    }
-                                }    
-                            }    
-                    }   
-                }
 
         var DataToSave = {
             sippayment_receiptno: NewReceipt_No,
@@ -294,6 +66,239 @@ export const createSipPaymentAction = async (req, res) => {
         }
         const sipPayment = new sipPaymentModel(DataToSave);
         await sipPayment.save();
+
+        var sipMemberDts = await sipMemberMgmtModel.findOne({_id:new ObjectId(sipmember_id)})
+        var ClientDetails = await clientModel.findOne({_id:new ObjectId(sipMemberDts.client_id)})
+        var sipCategory_Dts = await sipCategoryModel.findOne({_id:new ObjectId(sipMemberDts.sipmember_sip_category)})
+        // var Client_Ref_sch_pay_Dts = await referenceSchemePaymentModel.findOne({client_id:new ObjectId(ClientDetails.sip_refered_by_clientId)}).sort({_id: -1})
+        if(sipCategory_Dts.is_commission_calculate != false)
+        {
+            var Client_Ref_sch_pay_Dts = await referenceSchemePaymentModel.findOne({$and:[{client_id:new ObjectId(ClientDetails.sip_refered_by_clientId)},{reference_category:"SIP"}]}).sort({_id: -1})
+                    // console.log(Client_Ref_sch_pay_Dts);
+                    
+
+            if(ClientDetails.sip_refered_by_clientId != null)
+            {
+                if(Client_Ref_sch_pay_Dts != null)
+                {
+                    var comissionType = 'Spot'
+                    var comissionWay = "Single"
+                    var referenceSchemeDetails = await referenceSchemeModel.findOne({_id:new ObjectId(Client_Ref_sch_pay_Dts.reference_scheme)})
+                    if(referenceSchemeDetails.refScheme_comission == "Level" || referenceSchemeDetails.refScheme_comission == "Direct")
+                    {
+                        comissionType = 'Recurring'
+                        if(referenceSchemeDetails.refScheme_comission == "Direct")
+                        {
+                            comissionWay = "Direct"
+                        }  
+                    }
+
+                    var client_reference_details = await sipReferenceModel.findOne({$and:[{sipmember_clientid:new ObjectId(sipMemberDts.client_id)},{sip_refered_by:new ObjectId(ClientDetails.sip_refered_by_clientId)},{comission_type:comissionType}]}).sort({_id:-1});
+
+                    var newdate = new Date();
+                    // newdate.setMinutes(newdate.getMinutes()+330);
+                    var todaydate = newdate.getFullYear()+'-'+((newdate.getMonth() + 1)<=9?'0'+(newdate.getMonth() + 1):newdate.getMonth() + 1)+'-'+(newdate.getDate());
+                    var from_date = new Date(todaydate);
+                    from_date.setHours(5,30,0,0);
+                            
+                    var ReferedClient_id = []
+                    var UpdatedClientId = [] 
+
+                    var sip_refered_by_clientId = ClientDetails.sip_refered_by_clientId;
+
+                    // if(!client_reference_details)
+                    // {
+                    //     var referedClientCount = await sipReferenceModel.find({sip_refered_by:new ObjectId(ClientDetails.sip_refered_by_clientId)})
+
+                    //     if(referedClientCount.length >= 5)
+                    //     {
+                    //         var GetReferedClientDetails = await clientModel.findOne({_id:new ObjectId(ClientDetails.sip_refered_by_clientId)})
+            
+                    //         if(GetReferedClientDetails.sip_refered_by_clientId != null)
+                    //         {
+                    //             var AllReferedClient =  await sipReferenceModel.find({sip_refered_by:new ObjectId(GetReferedClientDetails.sip_refered_by_clientId)}).sort({_id:1});
+            
+                    //             if(AllReferedClient.length > 0)
+                    //             {
+                    //                 var AllReferedClientId = [];
+            
+                    //                 for(let id of AllReferedClient)
+                    //                 {
+                    //                     if(id.sipmember_clientid != sip_refered_by_clientId)
+                    //                     {
+                    //                             AllReferedClientId.push(id.sipmember_clientid)
+                    //                     }  
+                    //                 }
+            
+                    //                 var countId = await sipReferenceModel.aggregate([
+                    //                     {$match:{sip_refered_by:{$in:AllReferedClientId}}},
+                    //                     {
+                    //                         $group:{
+                    //                             _id:{
+                    //                                 sip_refered_by:"$sip_refered_by"
+                    //                             },
+                    //                             totalCount:{$sum: 1}
+                    //                         }
+                    //                     }
+                    //                 ])
+            
+                    //                 // console.log(countId);
+            
+                    //                 var referenceId = countId.filter((item)=> item.totalCount < 5)
+            
+                    //                 if(referenceId.length > 0)
+                    //                 {
+                    //                     var tempcount = 0
+                    //                     var tempreferenceId
+                    //                     var tempReferDate = null
+                    //                     for(let val of referenceId)
+                    //                     {
+                                                
+                    //                         if(val.totalCount > tempcount)
+                    //                         {
+                    //                             tempcount = val.totalCount
+                    //                             tempreferenceId = val._id.sip_refered_by
+                    //                             var referencDetils = await sipReferenceModel.findOne({sipmember_clientid:new ObjectId(val._id.sip_refered_by)})
+
+                    //                             tempReferDate = referencDetils.sip_referedDate
+                    //                         }
+                    //                         else if(val.totalCount == tempcount)
+                    //                         {
+                    //                             var referencDetils = await sipReferenceModel.findOne({sipmember_clientid:new ObjectId(val._id.sip_refered_by)})
+
+                    //                             if(tempReferDate != null)
+                    //                             {
+                    //                                 if(referencDetils.sip_referedDate > tempReferDate)
+                    //                                 {
+                    //                                     tempcount = val.totalCount
+                    //                                     tempreferenceId = val._id.sip_refered_by
+                    //                                     tempReferDate = referencDetils.sip_referedDate
+                    //                                 }
+                    //                             }
+                    //                             else
+                    //                             {
+                    //                                 tempcount = val.totalCount
+                    //                                 tempreferenceId = val._id.sip_refered_by
+                    //                                 tempReferDate = referencDetils.sip_referedDate
+                    //                             }   
+                    //                         }
+
+                    //                     }
+
+                    //                     sip_refered_by_clientId = tempreferenceId
+
+                    //                 }
+                    //             }
+                    //         }
+                    //     }
+                        
+                    //     var DataToSaveSIPReference = {
+                    //         sipmember_clientid: sipMemberDts.client_id,
+                    //         sip_refered_by: sip_refered_by_clientId,
+                    //         sip_referedDate: from_date,
+                    //         comission_type: comissionType,
+                    //         branch_id: branch_id
+                    //     }
+
+                    //     var ClientLevel = await clientModel.findOne({_id: new ObjectId(sip_refered_by_clientId)})
+                    //     ReferedClient_id.push({referedbyclientId:sip_refered_by_clientId,comissionType:comissionType,level:0})
+
+                    //     var updateClientDetails = await clientModel.updateOne({_id:new ObjectId(sipMemberDts.client_id)},{$set:{sip_refered_by_clientId:sip_refered_by_clientId}})
+                    //     const sip_reference = new sipReferenceModel(DataToSaveSIPReference);
+                    //     await sip_reference.save();
+                    // }
+
+                    // if( comissionType == 'Spot' )
+                            
+                    var client_refe_wallet = await ReferencePaymentWallet(sipMemberDts.client_id,sip_amount,sip_refered_by_clientId,Client_Ref_sch_pay_Dts.reference_scheme_amount,(!client_reference_details)?from_date:client_reference_details.sip_referedDate,sipMemberDts.sipmember_doj,comissionType,sip_payment_receivedDate,comissionWay,ClientDetails.client_sip_refrence_family,sipmember_id,sipPayment._id)
+
+                    //{referedbyclientId:ClientDetails.sip_refered_by_clientId,comissionType:comissionType,level:0}
+                    // ReferenceByLoop:
+                    //     for(let val of ReferedClient_id)
+                    //     {
+
+                    //         var updatedClient_index = UpdatedClientId.indexOf(val)
+
+                    //         if(updatedClient_index == -1)
+                    //         {
+                    //             var samelevelCount = 0
+                    //             var ReferedByClient_Id = await clientModel.findOne({_id: new ObjectId(val.referedbyclientId)})
+                                
+                    //             var client_referenceDetails = await sipReferenceModel.find({sip_refered_by: new ObjectId(val.referedbyclientId)})
+
+                    //             if(val.comissionType == 'Recurring')
+                    //             {
+                    //                 for(let client of client_referenceDetails)
+                    //                 {
+                    //                     let client_dts = await clientModel.findOne({$and:[{_id: new ObjectId(client.sipmember_clientid)},{sip_reference_level:{$gte:ReferedByClient_Id.sip_reference_level}}]})
+            
+                    //                     // console.log('114',client_dts);
+                                                    
+                    //                     if(client_dts != null)
+                    //                     {
+                    //                         samelevelCount = samelevelCount + 1
+                    //                     }
+                    //                 }
+
+                    //                 if(samelevelCount  >= 5)
+                    //                 {
+                    //                     if(ReferedByClient_Id.sip_reference_level <= 6)
+                    //                     {
+                    //                         var client_update_reference_level = await clientModel.updateOne(
+                    //                         { _id: new ObjectId(val.referedbyclientId) },
+                    //                         {
+                    //                             $set: {
+                    //                                 sip_reference_level: ReferedByClient_Id.sip_reference_level+1,
+                    //                             },
+                    //                         })   
+                    //                     }          
+                    //                 }
+                    //             }
+
+                    //             // for(let client of client_referenceDetails)
+                    //             // {
+                    //             //     let client_dts = await clientModel.findOne({$and:[{_id: new ObjectId(client.sipmember_clientid)},{sip_reference_level:ReferedByClient_Id.sip_reference_level}]})
+
+                    //             //     // console.log('114',client_dts);
+                                            
+                    //             //     if(client_dts)
+                    //             //     {
+                    //             //         samelevelCount = samelevelCount + 1
+                    //             //     }
+                    //             // }
+
+                    //             // if(samelevelCount  == 5)
+                    //             // {
+                    //             //     if(ReferedByClient_Id.sip_reference_level <= 6)
+                    //             //     {
+                    //             //         var client_update_reference_level = await clientModel.updateOne(
+                    //             //         { _id: new ObjectId(val) },
+                    //             //             {
+                    //             //             $set: {
+                    //             //                 sip_reference_level: ReferedByClient_Id.sip_reference_level+1,
+                    //             //             },
+                    //             //             })   
+                    //             //     }   
+                                    
+                    //             // }  
+
+                    //             UpdatedClientId.push(val)
+                    //             if(ReferedByClient_Id.sip_refered_by_clientId != null)
+                    //             {
+                    //                 var client_reference_details = await sipReferenceModel.findOne({$and:[{sipmember_clientid:new ObjectId(val.referedbyclientId)},{sip_refered_by:new ObjectId(ReferedByClient_Id.sip_refered_by_clientId)}]}).sort({_id:-1});
+
+                    //                 if(client_reference_details != null)
+                    //                 {
+                    //                     ReferedClient_id.push({referedbyclientId:ReferedByClient_Id.sip_refered_by_clientId,comissionType:client_reference_details.comission_type,level:val.level+1})
+                    //                 }
+
+                    //                 continue ReferenceByLoop; 
+                    //             }
+                    //         }    
+                    //     }    
+                }   
+            }
+        }
 
         if(sip_payment_mode == 'Wallet')
         {
@@ -427,6 +432,7 @@ export const deleteSipPaymentAction = async (req, res) => {
     try {
 
         var sipPayment = await sipPaymentModel.deleteOne({_id:new ObjectId(req.params.payment_id)})
+        var clientwallet_payment = await cilentWalletModel.deleteMany({payment_id:new ObjectId(req.params.payment_id)})
         res.status(201).json({ message: 'SIP Payment deleted successfully',status:true, sipPayment });
 
     } catch (error) {
@@ -638,14 +644,29 @@ export const getClientWalletBalance = async (req,res) =>{
     try {
 
         const client_Id = await sipMemberMgmtModel.findOne({_id:new ObjectId(req.params.member_id)})
-        const clientWalletBalance = await cilentWalletModel.findOne({client_id:new ObjectId(client_Id.client_id)}).sort({_id: -1}).limit(1)
+        // const clientWalletBalance = await cilentWalletModel.findOne({client_id:new ObjectId(client_Id.client_id)}).sort({_id: -1}).limit(1)
+        // console.log(client_Id);
+        
+        const clientWalletBalance = await cilentWalletModel.aggregate([
+            {$match:{$and:[{client_id:new ObjectId(client_Id.client_id)},{wallet_credit_lock:false}]}},
+            {
+                $group:{
+                    _id:{
+                        client_id:"$client_id"
+                    },
+                    total_credit:{$sum:{ $ifNull: ["$wallet_credit", 0] }},
+                    total_debit:{$sum:{ $ifNull: ["$wallet_debit", 0] }},
+                }
+            }
+        ])
 
+        // console.log(clientWalletBalance);
         
         if (!clientWalletBalance) {
             return res.status(404).json({ message: 'Entry not found',status:false });
         }
         // console.log(staff1);
-        res.status(200).json({ balance:clientWalletBalance.wallet_balance });
+        res.status(200).json({ balance:(clientWalletBalance.length > 0 )?clientWalletBalance[0].total_credit-clientWalletBalance[0].total_debit:0 });
         
     } catch (error) {
         res.status(400).json({ error: error.message });
@@ -672,11 +693,11 @@ export const getSipPaymentPreeventcheck = async (req,res)=>{
 
 }
 
-const ReferencePaymentWallet = async (member_client_id, sipAmt, referedbyclientId, schemeAmount, referenceDate, sipmember_doj, comissionType, sip_payment_receivedDate,comissionWay)=>{
+const ReferencePaymentWallet = async (member_client_id, sipAmt, referedbyclientId, schemeAmount, referenceDate, sipmember_doj, comissionType, sip_payment_receivedDate,comissionWay,isFamily,sipmember_id,payment_id)=>{
     var sip_amount = 1250;
     var ReferedByClients_Id = [];
     var UpdatedClientId = []
-    ReferedByClients_Id.push({referedbyclientId:referedbyclientId,comissionType:comissionType,level:0,comissionWay});
+    ReferedByClients_Id.push({referedbyclientId:referedbyclientId,comissionType:comissionType,level:0,comissionWay,isFamily:isFamily});
 
     client_Reference_Payment_Wallet:
     for(let val of ReferedByClients_Id)
@@ -690,10 +711,26 @@ const ReferencePaymentWallet = async (member_client_id, sipAmt, referedbyclientI
 
             var Client_Ref_sch_pay_Dts = await referenceSchemePaymentModel.findOne({$and:[{client_id:new ObjectId(client_details.sip_refered_by_clientId)},{reference_category:"SIP"}]}).sort({_id: -1});
 
-            if(client_details.sip_refered_by_clientId != null)
+            var todayDate = new Date()
+
+            var isPaymentLock = false
+
+            if(client_details.sip_refered_by_clientId != null && client_details.sip_refered_by_clientId != val.referedbyclientId)
             {
                 if(Client_Ref_sch_pay_Dts != null)
                 {
+                    
+                    if(Client_Ref_sch_pay_Dts.ref_payment_expirationDate < todayDate)
+                    {
+                        isPaymentLock = true
+                    }
+
+                    var referred_by_client_details = await clientModel.findOne({_id:new ObjectId(client_details.sip_refered_by_clientId)});
+
+                    if(referred_by_client_details.status == false)
+                    {
+                        isPaymentLock = true
+                    }
                     var comissionType = 'Spot'
                     var comissionWay = "Single"
                     var referenceSchemeDetails = await referenceSchemeModel.findOne({_id:new ObjectId(Client_Ref_sch_pay_Dts.reference_scheme)})
@@ -706,11 +743,13 @@ const ReferencePaymentWallet = async (member_client_id, sipAmt, referedbyclientI
                         }  
                     }
 
-                    var client_reference_details = await sipReferenceModel.findOne({$and:[{sipmember_clientid:new ObjectId(val.referedbyclientId)},{sip_refered_by:new ObjectId(client_details.sip_refered_by_clientId)},{comission_type:comissionType}]}).sort({_id:-1});
+                    var client_reference_details = await sipReferenceModel.findOne({$and:[{sipmember_clientid:new ObjectId(val.referedbyclientId)},{sip_refered_by:new ObjectId(client_details.sip_refered_by_clientId)}]}).sort({_id:-1});
+                    //,{comission_type:comissionType}
 
                     if(client_reference_details != null)
                     {
-                        ReferedByClients_Id.push({referedbyclientId:client_details.sip_refered_by_clientId,comissionType:client_reference_details.comission_type,level:val.level+1})
+                        ReferedByClients_Id.push({referedbyclientId:client_details.sip_refered_by_clientId,comissionType:comissionType,level:val.level+1,comissionWay,isFamily:client_details.client_sip_refrence_family})
+                        // client_reference_details.comission_type
                     }
                 }  
             }
@@ -732,22 +771,36 @@ const ReferencePaymentWallet = async (member_client_id, sipAmt, referedbyclientI
             //     var client_wallet = new cilentWalletModel(datatoWalletSave);
             //     client_wallet.save();
             // }
-            if((val.comissionType == 'Spot' && val.level == 0 && referenceDate == sip_payment_receivedDate) || (val.comissionType == 'Recurring' && val.level == client_details.sip_reference_level) || (val.comissionType == 'Recurring' && val.comissionWay == 'Direct'))
+
+            // var sipreference_date = new Date(referenceDate)
+            const year = referenceDate.getUTCFullYear();
+            const month = String(referenceDate.getUTCMonth() + 1).padStart(2, '0');
+            const day = String(referenceDate.getUTCDate()).padStart(2, '0');
+
+            const sipreference_date = `${year}-${month}-${day}`;
+            
+            if((val.comissionType == 'Spot' && val.level == 0 && sipreference_date == sip_payment_receivedDate && isFamily == false) || (val.comissionType == 'Recurring' && val.level == client_details.sip_reference_level) || (val.comissionType == 'Recurring' && val.comissionWay == 'Direct'))
             {
-                var referencelevelDetails = await referenceLevelModel.findOne({reference_level:val.level+1})
+                var referencelevelDetails = await referenceLevelModel.findOne({$and:[{reference_level:{$lte:val.level+1}},{reference_category:"SIP"}]}).sort({reference_level:-1})
 
                 var bonus_amount = (val.comissionType == 'Spot')?250:(sip_amount * referencelevelDetails.reference_bouns) / 100
 
                 var client_walletDetails = await cilentWalletModel.find({client_id:new ObjectId(val.referedbyclientId)}).limit(1).sort({_id:-1})
 
+                var payment_clientId = await sipMemberMgmtModel.findOne({_id:new ObjectId(sipmember_id)})
+
                 var datatoWalletSave = {
                     client_id: val.referedbyclientId,
                     wallet_trans_date: new Date(),
-                    wallet_trans_type:comissionType,
+                    wallet_trans_type:val.comissionType,
                     wallet_trans_desc: `Reference Payment for ${(val.comissionType == 'Spot')? `Spot Comission`:`Level ${val.level+1}`}`,
                     wallet_credit: bonus_amount,
                     wallet_debit: 0,
                     wallet_balance: (client_walletDetails.length>0)?(client_walletDetails[0].wallet_balance + (bonus_amount - 0)):(bonus_amount - 0),
+                    wallet_credit_lock: isPaymentLock,
+                    payment_id:payment_id,
+                    sipmember_id:sipmember_id,
+                    paymentbyclient_id:payment_clientId.client_id
                 }
 
 
@@ -767,13 +820,15 @@ const ReferencePaymentWallet = async (member_client_id, sipAmt, referedbyclientI
 }
 
 export const SIPPaymentCorrectionAction = async (req, res) => {
-    
+     
     var ClientPaymentDetails = [];
-    var AllSIPPaymentDetails  = await sipPaymentModel.find().sort({_id:1})//.limit(1)
+    var AllSIPPaymentDetails  = await sipPaymentModel.find({_id:new ObjectId("6718ac3aeacfd86c7470707f")}).sort({_id:1})//.limit(1)
 
     for(let Dts of AllSIPPaymentDetails)
     {
-        const{sipmember_id, sipmember_name, sip_payment_month, sip_amount, sip_penalty_month, sip_penalty_amount, sip_payment_mode, sip_payment_refno, sip_payment_receivedBy, sip_payment_receivedDate,branch_id} = Dts;   
+        console.log(Dts);
+        
+        const{_id,sipmember_id, sipmember_name, sip_payment_month, sip_amount, sip_penalty_month, sip_penalty_amount, sip_payment_mode, sip_payment_refno, sip_payment_receivedBy, sip_payment_receivedDate,branch_id} = Dts;   
         
         try {
 
@@ -782,208 +837,212 @@ export const SIPPaymentCorrectionAction = async (req, res) => {
             var ClientDetails = await clientModel.findOne({_id:new ObjectId(sipMemberDts.client_id)})
 
             // var Client_Ref_sch_pay_Dts = await referenceSchemePaymentModel.findOne({$and:[{client_id:new ObjectId(ClientDetails.sip_refered_by_clientId)},{ref_payment_receivedDate:{$lte:sip_payment_receivedDate}}]}).sort({_id: -1})
-
-            var Client_Ref_sch_pay_Dts = await referenceSchemePaymentModel.findOne({$and:[{client_id:new ObjectId(ClientDetails.sip_refered_by_clientId)},{reference_category:"SIP"}]}).sort({_id: -1})
-            
-
-            if(ClientDetails.sip_refered_by_clientId != null)
+            var sipCategory_Dts = await sipCategoryModel.findOne({_id:new ObjectId(sipMemberDts.sipmember_sip_category)})
+            // var Client_Ref_sch_pay_Dts = await referenceSchemePaymentModel.findOne({client_id:new ObjectId(ClientDetails.sip_refered_by_clientId)}).sort({_id: -1})
+            if(sipCategory_Dts.is_commission_calculate != false)
             {
-                if(Client_Ref_sch_pay_Dts != null)
+                var Client_Ref_sch_pay_Dts = await referenceSchemePaymentModel.findOne({$and:[{client_id:new ObjectId(ClientDetails.sip_refered_by_clientId)},{reference_category:"SIP"}]}).sort({_id: -1})
+                
+
+                if(ClientDetails.sip_refered_by_clientId != null)
                 {
-                    var comissionType = 'Spot'
-                    var comissionWay = "Single"
-                    var referenceSchemeDetails = await referenceSchemeModel.findOne({_id:new ObjectId(Client_Ref_sch_pay_Dts.reference_scheme)})
-                    if(referenceSchemeDetails.refScheme_comission == "Level" || referenceSchemeDetails.refScheme_comission == "Direct")
+                    if(Client_Ref_sch_pay_Dts != null)
                     {
-                        comissionType = 'Recurring'
-                        if(referenceSchemeDetails.refScheme_comission == "Direct")
+                        var comissionType = 'Spot'
+                        var comissionWay = "Single"
+                        var referenceSchemeDetails = await referenceSchemeModel.findOne({_id:new ObjectId(Client_Ref_sch_pay_Dts.reference_scheme)})
+                        if(referenceSchemeDetails.refScheme_comission == "Level" || referenceSchemeDetails.refScheme_comission == "Direct")
                         {
-                            comissionWay = "Direct"
-                        }  
-                    }
-
-                    var client_reference_details = await sipReferenceModel.findOne({$and:[{sipmember_clientid:new ObjectId(sipMemberDts.client_id)},{sip_refered_by:new ObjectId(ClientDetails.sip_refered_by_clientId)},{comission_type:comissionType}]}).sort({_id:-1});
-                    
-
-                    var newdate = new Date();
-                    // newdate.setMinutes(newdate.getMinutes()+330);
-                    var todaydate = newdate.getFullYear()+'-'+((newdate.getMonth() + 1)<=9?'0'+(newdate.getMonth() + 1):newdate.getMonth() + 1)+'-'+(newdate.getDate());
-                    var from_date = new Date(todaydate);
-                    from_date.setHours(5,30,0,0);
-                    
-                    var ReferedClient_id = []
-                    var UpdatedClientId = [] 
-
-                    var sip_refered_by_clientId = ClientDetails.sip_refered_by_clientId;
-
-                    if(!client_reference_details)
-                    {
-
-                        var referedClientCount = await sipReferenceModel.find({sip_refered_by:new ObjectId(ClientDetails.sip_refered_by_clientId)})
-
-                        if(referedClientCount.length >= 5)
-                        {
-                            var GetReferedClientDetails = await clientModel.findOne({_id:new ObjectId(ClientDetails.sip_refered_by_clientId)})
-
-                            if(GetReferedClientDetails.sip_refered_by_clientId != null)
+                            comissionType = 'Recurring'
+                            if(referenceSchemeDetails.refScheme_comission == "Direct")
                             {
-                                var AllReferedClient =  await sipReferenceModel.find({sip_refered_by:new ObjectId(GetReferedClientDetails.sip_refered_by_clientId)}).sort({_id:1});
-
-                                if(AllReferedClient.length > 0)
-                                {
-                                    var AllReferedClientId = [];
-
-                                    for(let id of AllReferedClient)
-                                    {
-                                        if(id.sipmember_clientid != sip_refered_by_clientId)
-                                        {
-                                            AllReferedClientId.push(id.sipmember_clientid)
-                                        }  
-                                    }
-
-                                    var countId = await sipReferenceModel.aggregate([
-                                        {$match:{sip_refered_by:{$in:AllReferedClientId}}},
-                                        {
-                                            $group:{
-                                                _id:{
-                                                    sip_refered_by:"$sip_refered_by"
-                                                },
-                                                totalCount:{$sum: 1}
-                                            }
-                                        }
-                                    ])
-
-                                    // console.log(countId);
-
-                                    var referenceId = countId.filter((item)=> item.totalCount < 5)
-
-                                    if(referenceId.length > 0)
-                                    {
-                                        var tempcount = 0
-                                        var tempreferenceId
-                                        var tempReferDate = null
-                                        for(let val of referenceId)
-                                        {
-                                            
-                                            if(val.totalCount > tempcount)
-                                            {
-                                                tempcount = val.totalCount
-                                                tempreferenceId = val._id.sip_refered_by
-                                                var referencDetils = await sipReferenceModel.findOne({sipmember_clientid:new ObjectId(val._id.sip_refered_by)})
-
-                                                tempReferDate = referencDetils.sip_referedDate
-                                            }
-                                            else if(val.totalCount == tempcount)
-                                            {
-                                                var referencDetils = await sipReferenceModel.findOne({sipmember_clientid:new ObjectId(val._id.sip_refered_by)})
-
-                                                if(tempReferDate != null)
-                                                {
-                                                    if(referencDetils.sip_referedDate > tempReferDate)
-                                                    {
-                                                        tempcount = val.totalCount
-                                                        tempreferenceId = val._id.sip_refered_by
-                                                        tempReferDate = referencDetils.sip_referedDate
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    tempcount = val.totalCount
-                                                    tempreferenceId = val._id.sip_refered_by
-                                                    tempReferDate = referencDetils.sip_referedDate
-                                                }   
-                                            }
-
-                                        }
-
-                                        sip_refered_by_clientId = tempreferenceId
-
-                                    }
-                                }
-                            }
+                                comissionWay = "Direct"
+                            }  
                         }
 
-                        var DataToSaveSIPReference = {
-                            sipmember_clientid: sipMemberDts.client_id,
-                            sip_refered_by: sip_refered_by_clientId,
-                            sip_referedDate: sip_payment_receivedDate,
-                            comission_type: comissionType,
-                            branch_id: branch_id
-                        }
-
-                        var ClientLevel = await clientModel.findOne({_id: new ObjectId(sip_refered_by_clientId)})
-                        ReferedClient_id.push({referedbyclientId:sip_refered_by_clientId,comissionType:comissionType,level:0})
-
-                        var updateClientDetails = await clientModel.updateOne({_id:new ObjectId(sipMemberDts.client_id)},{$set:{sip_refered_by_clientId:sip_refered_by_clientId}})
-                        const sip_reference = new sipReferenceModel(DataToSaveSIPReference);
-                        await sip_reference.save();
-                    }
-
-                    // remove wallet code and level upgrade code  
-
-                    var client_refe_wallet = await ReferencePaymentWalletCorrection(sipMemberDts.client_id,sip_amount,sip_refered_by_clientId,Client_Ref_sch_pay_Dts.reference_scheme_amount,(!client_reference_details)?sip_payment_receivedDate:client_reference_details.sip_referedDate,sipMemberDts.sipmember_doj,comissionType,sip_payment_receivedDate,comissionWay)
-                      
-
-                    ReferenceByLoop:
-                    for(let val of ReferedClient_id)
-                    {
+                        var client_reference_details = await sipReferenceModel.findOne({$and:[{sipmember_clientid:new ObjectId(sipMemberDts.client_id)},{sip_refered_by:new ObjectId(ClientDetails.sip_refered_by_clientId)},{comission_type:comissionType}]}).sort({_id:-1});
                         
-                        var updatedClient_index = UpdatedClientId.indexOf(val)
 
-                        if(updatedClient_index == -1)
-                        {
-                            var samelevelCount = 0
-                            var ReferedByClient_Id = await clientModel.findOne({_id: new ObjectId(val.referedbyclientId)})
+                        var newdate = new Date();
+                        // newdate.setMinutes(newdate.getMinutes()+330);
+                        var todaydate = newdate.getFullYear()+'-'+((newdate.getMonth() + 1)<=9?'0'+(newdate.getMonth() + 1):newdate.getMonth() + 1)+'-'+(newdate.getDate());
+                        var from_date = new Date(todaydate);
+                        from_date.setHours(5,30,0,0);
+                        
+                        var ReferedClient_id = []
+                        var UpdatedClientId = [] 
+
+                        var sip_refered_by_clientId = ClientDetails.sip_refered_by_clientId;
+
+                        // if(!client_reference_details)
+                        // {
+
+                        //     var referedClientCount = await sipReferenceModel.find({sip_refered_by:new ObjectId(ClientDetails.sip_refered_by_clientId)})
+
+                        //     if(referedClientCount.length >= 5)
+                        //     {
+                        //         var GetReferedClientDetails = await clientModel.findOne({_id:new ObjectId(ClientDetails.sip_refered_by_clientId)})
+
+                        //         if(GetReferedClientDetails.sip_refered_by_clientId != null)
+                        //         {
+                        //             var AllReferedClient =  await sipReferenceModel.find({sip_refered_by:new ObjectId(GetReferedClientDetails.sip_refered_by_clientId)}).sort({_id:1});
+
+                        //             if(AllReferedClient.length > 0)
+                        //             {
+                        //                 var AllReferedClientId = [];
+
+                        //                 for(let id of AllReferedClient)
+                        //                 {
+                        //                     if(id.sipmember_clientid != sip_refered_by_clientId)
+                        //                     {
+                        //                         AllReferedClientId.push(id.sipmember_clientid)
+                        //                     }  
+                        //                 }
+
+                        //                 var countId = await sipReferenceModel.aggregate([
+                        //                     {$match:{sip_refered_by:{$in:AllReferedClientId}}},
+                        //                     {
+                        //                         $group:{
+                        //                             _id:{
+                        //                                 sip_refered_by:"$sip_refered_by"
+                        //                             },
+                        //                             totalCount:{$sum: 1}
+                        //                         }
+                        //                     }
+                        //                 ])
+
+                        //                 // console.log(countId);
+
+                        //                 var referenceId = countId.filter((item)=> item.totalCount < 5)
+
+                        //                 if(referenceId.length > 0)
+                        //                 {
+                        //                     var tempcount = 0
+                        //                     var tempreferenceId
+                        //                     var tempReferDate = null
+                        //                     for(let val of referenceId)
+                        //                     {
+                                                
+                        //                         if(val.totalCount > tempcount)
+                        //                         {
+                        //                             tempcount = val.totalCount
+                        //                             tempreferenceId = val._id.sip_refered_by
+                        //                             var referencDetils = await sipReferenceModel.findOne({sipmember_clientid:new ObjectId(val._id.sip_refered_by)})
+
+                        //                             tempReferDate = referencDetils.sip_referedDate
+                        //                         }
+                        //                         else if(val.totalCount == tempcount)
+                        //                         {
+                        //                             var referencDetils = await sipReferenceModel.findOne({sipmember_clientid:new ObjectId(val._id.sip_refered_by)})
+
+                        //                             if(tempReferDate != null)
+                        //                             {
+                        //                                 if(referencDetils.sip_referedDate > tempReferDate)
+                        //                                 {
+                        //                                     tempcount = val.totalCount
+                        //                                     tempreferenceId = val._id.sip_refered_by
+                        //                                     tempReferDate = referencDetils.sip_referedDate
+                        //                                 }
+                        //                             }
+                        //                             else
+                        //                             {
+                        //                                 tempcount = val.totalCount
+                        //                                 tempreferenceId = val._id.sip_refered_by
+                        //                                 tempReferDate = referencDetils.sip_referedDate
+                        //                             }   
+                        //                         }
+
+                        //                     }
+
+                        //                     sip_refered_by_clientId = tempreferenceId
+
+                        //                 }
+                        //             }
+                        //         }
+                        //     }
+
+                        //     var DataToSaveSIPReference = {
+                        //         sipmember_clientid: sipMemberDts.client_id,
+                        //         sip_refered_by: sip_refered_by_clientId,
+                        //         sip_referedDate: sip_payment_receivedDate,
+                        //         comission_type: comissionType,
+                        //         branch_id: branch_id
+                        //     }
+
+                        //     var ClientLevel = await clientModel.findOne({_id: new ObjectId(sip_refered_by_clientId)})
+                        //     ReferedClient_id.push({referedbyclientId:sip_refered_by_clientId,comissionType:comissionType,level:0})
+
+                        //     var updateClientDetails = await clientModel.updateOne({_id:new ObjectId(sipMemberDts.client_id)},{$set:{sip_refered_by_clientId:sip_refered_by_clientId}})
+                        //     const sip_reference = new sipReferenceModel(DataToSaveSIPReference);
+                        //     await sip_reference.save();
+                        // }
+
+                        // remove wallet code and level upgrade code  
+
+                        var client_refe_wallet = await ReferencePaymentWalletCorrection(sipMemberDts.client_id,sip_amount,sip_refered_by_clientId,Client_Ref_sch_pay_Dts.reference_scheme_amount,(!client_reference_details)?sip_payment_receivedDate:client_reference_details.sip_referedDate,sipMemberDts.sipmember_doj,comissionType,sip_payment_receivedDate,comissionWay,ClientDetails.client_sip_refrence_family,sipmember_id,_id)
+                        
+
+                        // ReferenceByLoop:
+                        // for(let val of ReferedClient_id)
+                        // {
                             
-                            var client_referenceDetails = await sipReferenceModel.find({sip_refered_by: new ObjectId(val.referedbyclientId)})
+                        //     var updatedClient_index = UpdatedClientId.indexOf(val)
 
-                            if(val.comissionType == 'Recurring')
-                            {
-                                for(let client of client_referenceDetails)
-                                {
-                                    let client_dts = await clientModel.findOne({$and:[{_id: new ObjectId(client.sipmember_clientid)},{sip_reference_level:{$gte:ReferedByClient_Id.sip_reference_level}}]})
-
-                                    // console.log('114',client_dts);
-                                        
-                                    if(client_dts != null)
-                                    {
-                                        samelevelCount = samelevelCount + 1
-                                    }
-                                }
-
-                                // console.log(samelevelCount);
+                        //     if(updatedClient_index == -1)
+                        //     {
+                        //         var samelevelCount = 0
+                        //         var ReferedByClient_Id = await clientModel.findOne({_id: new ObjectId(val.referedbyclientId)})
                                 
+                        //         var client_referenceDetails = await sipReferenceModel.find({sip_refered_by: new ObjectId(val.referedbyclientId)})
 
-                                if(samelevelCount  >= 5)
-                                {
-                                    if(ReferedByClient_Id.sip_reference_level <= 6)
-                                    {
-                                        let client_update_reference_level = await clientModel.updateOne(
-                                        { _id: new ObjectId(val.referedbyclientId) },
-                                        {
-                                            $set: {
-                                                sip_reference_level: ReferedByClient_Id.sip_reference_level+1,
-                                            },
-                                        })   
-                                    }          
-                                }
-                            }
+                        //         if(val.comissionType == 'Recurring')
+                        //         {
+                        //             for(let client of client_referenceDetails)
+                        //             {
+                        //                 let client_dts = await clientModel.findOne({$and:[{_id: new ObjectId(client.sipmember_clientid)},{sip_reference_level:{$gte:ReferedByClient_Id.sip_reference_level}}]})
 
-                            UpdatedClientId.push(val)
-                            if(ReferedByClient_Id.sip_refered_by_clientId != null)
-                            {
-                                let client_reference_details = await sipReferenceModel.findOne({$and:[{sipmember_clientid:new ObjectId(val.referedbyclientId)},{sip_refered_by:new ObjectId(ReferedByClient_Id.sip_refered_by_clientId)}]}).sort({_id:-1});
+                        //                 // console.log('114',client_dts);
+                                            
+                        //                 if(client_dts != null)
+                        //                 {
+                        //                     samelevelCount = samelevelCount + 1
+                        //                 }
+                        //             }
 
-                                if(client_reference_details != null)
-                                {
-                                    ReferedClient_id.push({referedbyclientId:ReferedByClient_Id.sip_refered_by_clientId,comissionType:client_reference_details.comission_type,level:val.level+1})
-                                }
+                        //             // console.log(samelevelCount);
+                                    
 
-                                continue ReferenceByLoop; 
-                            }
-                        }    
-                    }
-                }   
+                        //             if(samelevelCount  >= 5)
+                        //             {
+                        //                 if(ReferedByClient_Id.sip_reference_level <= 6)
+                        //                 {
+                        //                     let client_update_reference_level = await clientModel.updateOne(
+                        //                     { _id: new ObjectId(val.referedbyclientId) },
+                        //                     {
+                        //                         $set: {
+                        //                             sip_reference_level: ReferedByClient_Id.sip_reference_level+1,
+                        //                         },
+                        //                     })   
+                        //                 }          
+                        //             }
+                        //         }
+
+                        //         UpdatedClientId.push(val)
+                        //         if(ReferedByClient_Id.sip_refered_by_clientId != null)
+                        //         {
+                        //             let client_reference_details = await sipReferenceModel.findOne({$and:[{sipmember_clientid:new ObjectId(val.referedbyclientId)},{sip_refered_by:new ObjectId(ReferedByClient_Id.sip_refered_by_clientId)}]}).sort({_id:-1});
+
+                        //             if(client_reference_details != null)
+                        //             {
+                        //                 ReferedClient_id.push({referedbyclientId:ReferedByClient_Id.sip_refered_by_clientId,comissionType:client_reference_details.comission_type,level:val.level+1})
+                        //             }
+
+                        //             continue ReferenceByLoop; 
+                        //         }
+                        //     }    
+                        // }
+                    }   
+                }
             }
 
             
@@ -1005,12 +1064,12 @@ export const SIPPaymentCorrectionAction = async (req, res) => {
     
 };
 
-const ReferencePaymentWalletCorrection = async (member_client_id, sipAmt, referedbyclientId, schemeAmount, referenceDate, sipmember_doj, comissionType, sip_payment_receivedDate,comissionWay)=>{
+const ReferencePaymentWalletCorrection = async (member_client_id, sipAmt, referedbyclientId, schemeAmount, referenceDate, sipmember_doj, comissionType, sip_payment_receivedDate,comissionWay,isFamily,sipmember_id,payment_id)=>{
     
     var sip_amount = 1250;
     var ReferedByClients_Id = [];
     var UpdatedClientId = []
-    ReferedByClients_Id.push({referedbyclientId:referedbyclientId,comissionType:comissionType,level:0,comissionWay});
+    ReferedByClients_Id.push({referedbyclientId:referedbyclientId,comissionType:comissionType,level:0,comissionWay,isFamily:isFamily});
 
     client_Reference_Payment_Wallet:
     for(let val of ReferedByClients_Id)
@@ -1019,7 +1078,7 @@ const ReferencePaymentWalletCorrection = async (member_client_id, sipAmt, refere
         
         // if(val.referedbyclientId == "670e60ed6fa7c68051ad9651" || val.referedbyclientId == "67124c588bfbd156f502b7fd")
         // {
-        //     console.log(val);
+            console.log(val);
         // }
         
         
@@ -1033,12 +1092,28 @@ const ReferencePaymentWalletCorrection = async (member_client_id, sipAmt, refere
 
             var Client_Ref_sch_pay_Dts = await referenceSchemePaymentModel.findOne({$and:[{client_id:new ObjectId(client_details.sip_refered_by_clientId)},{reference_category:"SIP"}]}).sort({_id: -1});
 
+            var todayDate = new Date()
 
-            if(client_details.sip_refered_by_clientId != null)
+            var isPaymentLock = false;
+
+            if(client_details.sip_refered_by_clientId != null && client_details.sip_refered_by_clientId != val.referedbyclientId)
             {
 
                 if(Client_Ref_sch_pay_Dts != null)
                 {
+
+                    if(Client_Ref_sch_pay_Dts.ref_payment_expirationDate < todayDate)
+                    {
+                        isPaymentLock = true
+                    }
+
+                    var referred_by_client_details = await clientModel.findOne({_id:new ObjectId(client_details.sip_refered_by_clientId)});
+
+                    if(referred_by_client_details.status == false)
+                    {
+                        isPaymentLock = true
+                    }
+                    
                     var comissionType = 'Spot'
                     var comissionWay = "Single"
                     var referenceSchemeDetails = await referenceSchemeModel.findOne({_id:new ObjectId(Client_Ref_sch_pay_Dts.reference_scheme)})
@@ -1052,11 +1127,12 @@ const ReferencePaymentWalletCorrection = async (member_client_id, sipAmt, refere
                     }
 
 
-                    var client_reference_details = await sipReferenceModel.findOne({$and:[{sipmember_clientid:new ObjectId(val.referedbyclientId)},{sip_refered_by:new ObjectId(client_details.sip_refered_by_clientId)},{comission_type:comissionType}]}).sort({_id:-1});
-
+                    var client_reference_details = await sipReferenceModel.findOne({$and:[{sipmember_clientid:new ObjectId(val.referedbyclientId)},{sip_refered_by:new ObjectId(client_details.sip_refered_by_clientId)},]}).sort({_id:-1});
+                    //{comission_type:comissionType}
                     if(client_reference_details != null)
                     {
-                        ReferedByClients_Id.push({referedbyclientId:client_details.sip_refered_by_clientId,comissionType:client_reference_details.comission_type,level:val.level+1,comissionWay})
+                        ReferedByClients_Id.push({referedbyclientId:client_details.sip_refered_by_clientId,comissionType:comissionType,level:val.level+1,comissionWay,isFamily:client_details.client_sip_refrence_family})
+                        //client_reference_details.comission_type
                     }
                 }
             }
@@ -1078,15 +1154,17 @@ const ReferencePaymentWalletCorrection = async (member_client_id, sipAmt, refere
             //     var client_wallet = new cilentWalletModel(datatoWalletSave);
             //     client_wallet.save();
             // }
-
+            // && referenceDate == sip_payment_receivedDate
             
-            if((val.comissionType == 'Spot' && val.level == 0 && referenceDate == sip_payment_receivedDate) || (val.comissionType == 'Recurring' && val.level == client_details.sip_reference_level) || (val.comissionType == 'Recurring' && val.comissionWay == 'Direct'))
+            if((val.comissionType == 'Spot' && val.level == 0 && isFamily == false && referenceDate == sip_payment_receivedDate) || (val.comissionType == 'Recurring' && val.level == client_details.sip_reference_level) || (val.comissionType == 'Recurring' && val.comissionWay == 'Direct'))
             {
-                var referencelevelDetails = await referenceLevelModel.findOne({reference_level:val.level+1})
+                var referencelevelDetails = await referenceLevelModel.findOne({$and:[{reference_level:{$lte:val.level+1}},{reference_category:"SIP"}]}).sort({_id:-1})
 
                 var bonus_amount = (val.comissionType == 'Spot')?250:(sip_amount * referencelevelDetails.reference_bouns) / 100
 
                 var client_walletDetails = await cilentWalletModel.find({client_id:new ObjectId(val.referedbyclientId)}).limit(1).sort({_id:-1})
+
+                var payment_clientId = await sipMemberMgmtModel.findOne({_id:new ObjectId(sipmember_id)})
 
                 var datatoWalletSave = {
                     client_id: val.referedbyclientId,
@@ -1096,6 +1174,10 @@ const ReferencePaymentWalletCorrection = async (member_client_id, sipAmt, refere
                     wallet_credit: bonus_amount,
                     wallet_debit: 0,
                     wallet_balance: (client_walletDetails.length>0)?(client_walletDetails[0].wallet_balance + (bonus_amount - 0)):(bonus_amount - 0),
+                    wallet_credit_lock: isPaymentLock,
+                    payment_id:payment_id,
+                    sipmember_id:sipmember_id,
+                    paymentbyclient_id:payment_clientId.client_id
                 }
 
 

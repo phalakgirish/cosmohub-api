@@ -7,7 +7,7 @@ import referenceSchemePaymentModel from "../models/referenceSchemePay.model.js";
 const ObjectId = mongoose.Types.ObjectId;
 
 export const createReferenceSchemePaymentAction = async (req, res) => {
-    const{client_id,client_name,reference_category,reference_scheme,reference_scheme_amount,ref_payment_mode,ref_payment_refno,ref_payment_receivedBy,ref_payment_receivedDate,branch_id} = req.body; 
+    const{client_id,client_name,reference_category,reference_scheme,reference_scheme_amount,ref_payment_mode,ref_payment_refno,ref_payment_receivedBy,ref_payment_receivedDate,ref_payment_expirationDate,branch_id} = req.body; 
 
     try {
 
@@ -50,6 +50,7 @@ export const createReferenceSchemePaymentAction = async (req, res) => {
             ref_payment_refno: ref_payment_refno,
             ref_payment_receivedBy: ref_payment_receivedBy,
             ref_payment_receivedDate: ref_payment_receivedDate,
+            ref_payment_expirationDate:ref_payment_expirationDate,
             branch_id: branch_id
         }
         const refSchPayment = new referenceSchemePaymentModel(DataToSave);
@@ -83,7 +84,8 @@ export const createReferenceSchemePaymentAction = async (req, res) => {
                     ref_payment_mode:1,
                     ref_payment_refno:1,
                     ref_payment_receivedBy:{ $arrayElemAt: ["$receivedBy.staff_name", 0] },
-                    ref_payment_receivedDate:1
+                    ref_payment_receivedDate:1,
+                    ref_payment_expirationDate:1,
                 }
             }
         ])
@@ -142,7 +144,8 @@ export const getReferenceSchemePaymentAction = async (req, res) => {
                     client_name:1,
                     reference_scheme_amount: 1,
                     ref_payment_receivedBy:{ $arrayElemAt: ["$receivedBy.staff_name", 0] },
-                    ref_payment_receivedDate:1
+                    ref_payment_receivedDate:1,
+                    ref_payment_expirationDate:1
                 }
             }
         ]) //.skip(skip).limit(limit)
@@ -173,7 +176,7 @@ export const deleteReferenceSchPaymentAction = async (req, res) => {
 
 export const updateReferenceSchemePaymentAction = async (req, res) => {
 
-    const{refschpayment_receiptno,client_id,client_name,reference_category,reference_scheme,reference_scheme_amount,ref_payment_mode,ref_payment_refno,ref_payment_receivedBy,ref_payment_receivedDate,branch_id} = req.body; 
+    const{refschpayment_receiptno,client_id,client_name,reference_category,reference_scheme,reference_scheme_amount,ref_payment_mode,ref_payment_refno,ref_payment_receivedBy,ref_payment_receivedDate, ref_payment_expirationDate, branch_id} = req.body; 
 
     try {
 
@@ -188,6 +191,7 @@ export const updateReferenceSchemePaymentAction = async (req, res) => {
             ref_payment_refno: ref_payment_refno,
             ref_payment_receivedBy: ref_payment_receivedBy,
             ref_payment_receivedDate: ref_payment_receivedDate,
+            ref_payment_expirationDate:ref_payment_expirationDate,
             branch_id: branch_id
         }
         
@@ -199,3 +203,25 @@ export const updateReferenceSchemePaymentAction = async (req, res) => {
         res.status(400).json({ error: error.message });
     }
 };
+
+
+export const referenceSchemePaymentDataCorrect = async (req,res)=>{
+    var ClientErrorDetails = [];
+    var clientDetails = await referenceSchemePaymentModel.find();
+
+    for(let val of clientDetails)
+    {
+        try{
+            const expirationDate = new Date(val.ref_payment_receivedDate);
+            expirationDate.setDate(expirationDate.getDate() + 365);
+            
+            var reference_payment = await referenceSchemePaymentModel.updateOne({_id:new ObjectId(val._id)},{$set:{ref_payment_expirationDate:expirationDate}})
+            
+        }
+        catch(error)
+        {
+            ClientErrorDetails.push({ error: error.message,val })
+        }
+        
+    }
+}

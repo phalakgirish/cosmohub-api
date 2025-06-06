@@ -6,6 +6,7 @@ import luckyDrawModel from "../models/luckyDraw.model.js";
 import clientModel from "../models/client.model.js";
 import sipReferenceModel from "../models/sipReference.model.js";
 import cilentWalletModel from "../models/clientWallet.model.js";
+import referenceSchemePaymentModel from "../models/referenceSchemePay.model.js";
 
 const ObjectId = mongoose.Types.ObjectId;
 
@@ -501,7 +502,9 @@ export const getClientWiseCommisionDetailsAction = async (req,res)=>{
         ReferenceByLoop:
         for(let val of ReferedClient_id)
         {
-
+ 
+            // console.log(val);
+            
             var updatedClient_index = UpdatedClientId.indexOf(val)
 
             if(updatedClient_index == -1)
@@ -509,10 +512,29 @@ export const getClientWiseCommisionDetailsAction = async (req,res)=>{
                 
                 var samelevelCount = 0
                   
-                var client_referenceDetails = await sipReferenceModel.find({sip_refered_by: new ObjectId(val.memberClientId)})
+                // var client_referenceDetails = await sipReferenceModel.find({sip_refered_by: new ObjectId(val.memberClientId)})
+                var client_referenceDetails = await sipReferenceModel.aggregate([
+                    {$match:{sip_refered_by: new ObjectId(val.memberClientId)}},
+                    {
+                        $group: {
+                          _id: "$sipmember_clientid",   // Group by client_id
+                          count: { $sum: 1 }   // Count occurrences
+                        }
+                    },
+                    {
+                        $project: {
+                          _id: 0,
+                          sipmember_clientid: "$_id"    // Rename _id to client_id
+                        }
+                    }
+                ])
+
+
+
 
                 for(let i of client_referenceDetails)
                 {
+
                     ReferedClient_id.push({memberClientId:i.sipmember_clientid,start_Date:req.body.startDate,end_Date:req.body.endDate,level:val.level+1})
                 }
 
@@ -536,13 +558,19 @@ export const getClientWiseCommisionDetailsAction = async (req,res)=>{
         {
             var query = {}
             var queryWallet = {}
+            var queryClientWallet = {}
+
 
             var filter_field = []
             var filter_fieldWallet = []
+            var filter_clientfieldWallet = []
+
 
 
             filter_field.push({client_id:new ObjectId(val.memberClientId)})
-            filter_fieldWallet.push({client_id:new ObjectId(val.memberClientId)})
+            filter_fieldWallet.push({client_id:new ObjectId(val.memberClientId)},{wallet_credit_lock:false})
+            filter_clientfieldWallet.push({client_id:new ObjectId(req.body.client_id)},{paymentbyclient_id:new ObjectId(val.memberClientId)},{wallet_credit_lock:false})
+
 
 
             if(val.start_Date != '' && val.end_Date != '')
@@ -552,24 +580,25 @@ export const getClientWiseCommisionDetailsAction = async (req,res)=>{
                 var endDate = new Date(val.end_Date);
                     
                 filter_field.push({"Sip_Payments.sip_payment_receivedDate":{$gte:startDate,$lte:getDateOfMonth(endDate,'End')}}) 
-                filter_fieldWallet.push({wallet_trans_date:{$gte:startDate,$lte:getDateOfMonth(endDate,'End')}})   
+                filter_fieldWallet.push({wallet_trans_date:{$gte:startDate,$lte:getDateOfMonth(endDate,'End')}}) 
+                filter_clientfieldWallet.push({wallet_trans_date:{$gte:startDate,$lte:getDateOfMonth(endDate,'End')}})  
 
             }
 
             if(filter_field.length > 1)
             {
                 query = {$and:filter_field}
-                queryWallet = {$and:filter_fieldWallet}
             }
             else
             {
                 for(let val of filter_field)
                 {
                     query = val;
-                    queryWallet = val;
                 }      
             }
+            queryWallet = {$and:filter_fieldWallet}
             // console.log(queryWallet);
+            queryClientWallet = {$and:filter_clientfieldWallet}
             
             var ReferedByClient_Id = await clientModel.findOne({_id: new ObjectId(val.memberClientId)})
             .populate('sip_refered_by_clientId','client_id client_name')
@@ -638,12 +667,62 @@ export const getClientWiseCommisionDetailsAction = async (req,res)=>{
             // console.log(ReferedByClient_Id);
             // console.log(sipMemberDetails);
             // console.log(clientWalletDetails);
-
-
+            // queryClientWallet
+            var paymentby_client = await cilentWalletModel.aggregate([
+                {
+                    $lookup:{
+                        from: "sip_member_mgmts",
+                        localField: "sipmember_id",
+                        foreignField: "_id",
+                        as: "sipmember_dts",
+                    }
+                },
+                {
+                    $unwind: {
+                        path: "$sipmember_dts",    
+                        preserveNullAndEmptyArrays: true // Preserve documents without matching payment records
+                      }
+                    // preserveNullAndEmptyArrays: true
+                },
+                {$match:queryClientWallet},
+                {
+                    $group:{
+                        _id:{
+                            client_id:"$paymentbyclient_id",
+                            wallet_trans_type:"$wallet_trans_type"
+                        },
+                    totalCredit:{$sum:{ $ifNull: ["$wallet_credit", 0] }},
+                    sipId_array:{$addToSet:"$sipmember_dts.sipmember_id"}
+                    }
+                },
+                {
+                    $project:{
+                        _id:0,
+                        paymentby_client:"$_id.client_id",
+                        wallet_trans_type:"$_id.wallet_trans_type",
+                        totalCredit:1,
+                        sipIdlist:{
+                            $reduce:{
+                                input:"$sipId_array",
+                                initialValue:"",
+                                in: {
+                                    $cond: [
+                                      { $eq: ["$$value", ""] },
+                                      "$$this",
+                                      { $concat: ["$$value", ",", "$$this"] }
+                                    ]
+                                }
+                            }
+                        }
+                    }
+                }
+            ])
             
-
+            
             var spot_commission = clientWalletDetails.filter((item)=>item.wallet_trans_type == 'Spot')
             var recurring_commission = clientWalletDetails.filter((item)=>item.wallet_trans_type == 'Recurring')
+            var spot_commission_dts = paymentby_client.filter((item)=>item.wallet_trans_type == 'Spot')
+            var recurring_commission_dts = paymentby_client.filter((item)=>item.wallet_trans_type == 'Recurring')
 
             var todayDate = new Date()
             var comissionClientDetails = {
@@ -655,10 +734,14 @@ export const getClientWiseCommisionDetailsAction = async (req,res)=>{
                 referred_client_id:(ReferedByClient_Id.sip_refered_by_clientId == null)?'':ReferedByClient_Id.sip_refered_by_clientId.client_id,
                 referred_client_name:(ReferedByClient_Id.sip_refered_by_clientId == null)?'':ReferedByClient_Id.sip_refered_by_clientId.client_name,
                 total_invested_amount:(sipMemberDetails.length == 0)?0:sipMemberDetails[0].totalSIPAmount,
+                spot_commission_dts:(spot_commission_dts.length == 0)?'':spot_commission_dts[0].sipIdlist,
+                total_spot_commission_dts:(spot_commission_dts.length == 0)?0:spot_commission_dts[0].totalCredit,
                 total_spot_commission:(spot_commission.length == 0)?0:spot_commission[0].totalCredit,
+                recurring_commission_dts:(recurring_commission_dts.length == 0)?'':recurring_commission_dts[0].sipIdlist,
+                total_recurring_commission_dts:(recurring_commission_dts.length == 0)?0:recurring_commission_dts[0].totalCredit,
                 total_recurring_commission:(recurring_commission == 0)?0:recurring_commission[0].totalCredit,
-                sipJoinDate:sipDetails.sipmember_doj,
-                months:calculateMonthDiff(sipDetails.sipmember_doj,todayDate)
+                sipJoinDate:ReferedByClient_Id.createdAt,
+                months:calculateMonthDiff(ReferedByClient_Id.createdAt,todayDate)
             }
             
             CommissionDetails.push(comissionClientDetails)
@@ -697,6 +780,58 @@ export const getClientWiseCommisionDetailsAction = async (req,res)=>{
     {
         res.status(400).json({ error: error.message });
     }
+}
+
+export const getClientSchemeExpireInOneMonthAction = async (req, res)=>{
+    try
+    {
+        var todayDate = new Date();
+        todayDate.setMinutes(todayDate.getMinutes()+330);
+        var fromDate = getDateOfMonth1(todayDate.toISOString(),'Start')
+        var toDate = getDateOfMonth1(todayDate.toISOString(),'End')
+
+        // console.log(fromDate,toDate);
+        
+        var referenceSchemepayment_dts = await referenceSchemePaymentModel.aggregate([
+            {
+                $lookup:{
+                    from: "clients",
+                    localField: "client_id",
+                    foreignField: "_id",
+                    as: "clients",
+                 }
+            },
+            {
+                $lookup:{
+                    from: "reference_schemes",
+                    localField: "reference_scheme",
+                    foreignField: "_id",
+                    as: "reference_scheme",
+                 }
+            },
+            {$match:{ref_payment_expirationDate:{$gte:fromDate,$lte:toDate}}},
+            {
+                $project:{
+                    client_id:{ $arrayElemAt: ["$clients.client_id", 0] },
+                    client_name:{ $arrayElemAt: ["$clients.client_name", 0] },
+                    reference_category:1,
+                    reference_scheme:{ $arrayElemAt: ["$reference_scheme.refScheme_name", 0] },
+                    ref_payment_expirationDate:1
+                }
+            }
+        ])
+        // console.log(referenceSchemepayment_dts);
+        
+        res.status(200).json({referenceSchemepayment_dts,status:true})
+    }
+    catch(error)
+    {
+        console.log(error);
+        
+        res.status(404).json({error:error,status:false})
+    }
+
+    
 }
 
 const formatMonthDate = (dateString)=> {
@@ -762,5 +897,32 @@ const formatDate = (date) => {
       month: '2-digit',
       year: 'numeric',
     });
+}
+
+const getDateOfMonth1 = (monthstr,pos)=>{
+
+    const DateStr = monthstr.split('T');
+    const [year, month, date] = DateStr[0].split('-').map(Number);
+    let MonthDate
+    // Start date of the month
+    if(pos == 'Start')
+    {
+        MonthDate = new Date(year, month - 1, date);
+    }
+    else
+    {
+        MonthDate = new Date(year, month, date);
+    }
+    
+    
+    if(pos != 'Start')
+    {
+        MonthDate.setHours(29,29,59,0)
+    }
+    else
+    {
+        MonthDate.setMinutes(MonthDate.getMinutes()+330);
+    }
+    return MonthDate;
 }
 
